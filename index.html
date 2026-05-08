@@ -69,6 +69,16 @@ textarea{resize:vertical;min-height:60px}
 .cal-day-num{font-weight:600;margin-bottom:.2rem}
 .cal-chip{display:block;padding:1px 4px;border-radius:3px;font-size:.65rem;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .cal-chip:hover{opacity:.8}
+.cal-chip.airbnb{border-left:2px solid #FF5A5F;font-weight:600}
+.cal-chip.airbnb-checkin{border-left:2px solid #00A699}
+.cal-chip.airbnb-checkout{border-left:2px solid #FF5A5F}
+.cal-chip.airbnb-stay{border-left:2px solid #484848;opacity:.7}
+.airbnb-legend{display:flex;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap;font-size:.75rem;color:var(--text2)}
+.airbnb-legend span{display:flex;align-items:center;gap:.3rem}
+.airbnb-legend i{font-size:.9rem}
+.sync-btn{background:var(--surface2);color:var(--text);padding:.4rem .75rem;font-size:.8rem;display:flex;align-items:center;gap:.3rem}
+.sync-btn.syncing{opacity:.5;pointer-events:none}
+.ical-input{font-size:.78rem;padding:.35rem .5rem}
 
 .task-filters{display:flex;gap:.35rem;margin-bottom:1rem}
 .task-filter{padding:.35rem .7rem;border-radius:99px;background:var(--surface2);color:var(--text2);font-size:.8rem}
@@ -178,6 +188,12 @@ textarea{resize:vertical;min-height:60px}
         <h2 id="calTitle"></h2>
         <button class="cal-btn" id="calNext"><i class="ti ti-chevron-right"></i></button>
         <button class="cal-btn" id="calToday">今月</button>
+        <button class="sync-btn" id="btnSync"><i class="ti ti-refresh"></i> Airbnb同期</button>
+      </div>
+      <div class="airbnb-legend" id="airbnbLegend" style="display:none">
+        <span><i class="ti ti-login" style="color:#00A699"></i> チェックイン</span>
+        <span><i class="ti ti-logout" style="color:#FF5A5F"></i> チェックアウト</span>
+        <span><i class="ti ti-moon" style="color:#484848"></i> 宿泊中</span>
       </div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
@@ -219,6 +235,11 @@ textarea{resize:vertical;min-height:60px}
           <input type="color" id="newPropColor" value="#1D9E75" class="color-input">
           <button class="btn-sm btn-primary" id="btnAddProp">追加</button>
         </div>
+      </div>
+      <div class="settings-section">
+        <h3><i class="ti ti-brand-airbnb"></i> Airbnb iCal連携</h3>
+        <p style="font-size:.78rem;color:var(--text2);margin-bottom:.75rem">物件ごとにAirbnbのiCalフィードURLを設定すると、予約情報がカレンダーに自動表示されます。</p>
+        <div id="settingsIcal"></div>
       </div>
       <div class="settings-section">
         <h3><i class="ti ti-users"></i> スタッフ管理</h3>
@@ -273,7 +294,9 @@ firebase.initializeApp({
 });
 
 const db = firebase.database();
+const ICAL_PROXY = 'https://cleanboard-proxy.cleanboard-proxy.workers.dev';
 let properties = {}, staff = {}, tasks = {}, checklist = {};
+let airbnbEvents = {};
 let activeFilter = 'all', activePropFilter = null;
 let calYear, calMonth;
 
@@ -423,7 +446,15 @@ function renderCalendar(){
     const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
     const dayTasks=Object.values(tasks).filter(t=>t.date===dateStr&&(activePropFilter===null||t.prop===activePropFilter));
-    let chips=dayTasks.map(t=>{
+    const abEvents=(airbnbEvents[dateStr]||[]).filter(b=>activePropFilter===null||b.propId===activePropFilter);
+    let chips=abEvents.map(b=>{
+      const p=properties[b.propId];
+      if(!p)return'';
+      const icons={checkin:'<i class="ti ti-login"></i> IN',checkout:'<i class="ti ti-logout"></i> OUT',stay:'<i class="ti ti-moon"></i>'};
+      const cls={checkin:'airbnb-checkin',checkout:'airbnb-checkout',stay:'airbnb-stay'};
+      return`<span class="cal-chip airbnb ${cls[b.type]}" style="background:${p.bgColor||'#eee'};color:${p.color}" title="${esc(p.name)} ${b.summary||''}">${icons[b.type]} ${esc(p.name)}</span>`;
+    }).join('');
+    chips+=dayTasks.map(t=>{
       const p=properties[t.prop];
       if(!p)return'';
       const s=staff[t.staff];
@@ -555,6 +586,7 @@ function renderStats(){
 function renderSettings(){
   document.getElementById('settingsProps').innerHTML=Object.entries(properties).map(([id,p])=>`<div class="setting-row"><span class="filter-dot" style="background:${p.color}"></span><span>${esc(p.name)}</span><button class="btn-sm btn-danger" onclick="deleteProp('${id}')"><i class="ti ti-trash"></i></button></div>`).join('');
   document.getElementById('settingsStaff').innerHTML=Object.entries(staff).map(([id,s])=>`<div class="setting-row"><i class="ti ti-user" style="color:var(--text2)"></i><span>${esc(s.name)}</span><button class="btn-sm btn-danger" onclick="deleteStaff('${id}')"><i class="ti ti-trash"></i></button></div>`).join('');
+  renderSettingsIcal();
 }
 
 document.getElementById('btnAddProp').onclick=()=>{
@@ -611,8 +643,102 @@ document.querySelectorAll('.nav-tab').forEach(tab=>{
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
+// Airbnb iCal
+function parseICal(text){
+  const events=[];
+  const blocks=text.split('BEGIN:VEVENT');
+  for(let i=1;i<blocks.length;i++){
+    const b=blocks[i].split('END:VEVENT')[0];
+    const get=k=>{const m=b.match(new RegExp(k+':(.+)'));return m?m[1].trim():''};
+    const dtstart=get('DTSTART;VALUE=DATE')||get('DTSTART');
+    const dtend=get('DTEND;VALUE=DATE')||get('DTEND');
+    const summary=get('SUMMARY');
+    const desc=get('DESCRIPTION');
+    if(dtstart&&dtend){
+      const start=dtstart.replace(/(\d{4})(\d{2})(\d{2}).*/,'$1-$2-$3');
+      const end=dtend.replace(/(\d{4})(\d{2})(\d{2}).*/,'$1-$2-$3');
+      events.push({start,end,summary,desc});
+    }
+  }
+  return events;
+}
+
+function expandBookings(events,propId){
+  const result=[];
+  for(const ev of events){
+    if(ev.summary==='Not available'||ev.summary==='Airbnb (Not available)')continue;
+    const s=new Date(ev.start),e=new Date(ev.end);
+    const nights=Math.round((e-s)/(86400000));
+    for(let d=0;d<nights;d++){
+      const cur=new Date(s);cur.setDate(cur.getDate()+d);
+      const dateStr=cur.toISOString().slice(0,10);
+      let type='stay';
+      if(d===0)type='checkin';
+      if(d===nights-1)type='checkout';
+      if(nights===1)type='checkout';
+      result.push({date:dateStr,type,propId,summary:ev.summary,nights});
+    }
+  }
+  return result;
+}
+
+async function syncAirbnb(){
+  const btn=document.getElementById('btnSync');
+  btn.classList.add('syncing');
+  btn.innerHTML='<i class="ti ti-refresh"></i> 同期中...';
+  airbnbEvents={};
+  let hasIcal=false;
+  for(const[id,p] of Object.entries(properties)){
+    if(!p.icalUrl)continue;
+    hasIcal=true;
+    try{
+      const resp=await fetch(ICAL_PROXY+'?url='+encodeURIComponent(p.icalUrl));
+      if(!resp.ok)continue;
+      const text=await resp.text();
+      const events=parseICal(text);
+      const bookings=expandBookings(events,id);
+      for(const b of bookings){
+        if(!airbnbEvents[b.date])airbnbEvents[b.date]=[];
+        airbnbEvents[b.date].push(b);
+      }
+    }catch(e){console.error('iCal sync error for '+p.name,e)}
+  }
+  btn.classList.remove('syncing');
+  btn.innerHTML='<i class="ti ti-refresh"></i> Airbnb同期';
+  if(hasIcal)document.getElementById('airbnbLegend').style.display='flex';
+  renderCalendar();
+  renderTasks();
+}
+
+document.getElementById('btnSync').onclick=syncAirbnb;
+
+// Settings: iCal URLs
+function renderSettingsIcal(){
+  const el=document.getElementById('settingsIcal');
+  if(!el)return;
+  el.innerHTML=Object.entries(properties).map(([id,p])=>`<div class="setting-row" style="flex-wrap:wrap">
+    <span class="filter-dot" style="background:${p.color}"></span>
+    <span style="min-width:80px">${esc(p.name)}</span>
+    <input class="ical-input" style="flex:1;min-width:200px" placeholder="iCal URL (https://www.airbnb.jp/calendar/ical/...)" value="${p.icalUrl?esc(p.icalUrl):''}" onchange="saveIcalUrl('${id}',this.value)">
+  </div>`).join('');
+}
+
+function saveIcalUrl(propId,url){db.ref('properties/'+propId+'/icalUrl').set(url.trim())}
+
 // Boot
-initDefaults().then(listen);
+async function boot(){
+  await initDefaults();
+  const pSnap=await db.ref('properties').once('value');
+  const props=pSnap.val()||{};
+  for(const[id,p] of Object.entries(props)){
+    if(p.name==='@marugame'&&!p.icalUrl){
+      await db.ref('properties/'+id+'/icalUrl').set('https://www.airbnb.jp/calendar/ical/1435367472357209402.ics?t=3f1cb3b5d4ea4419b981b3970dea4fc4');
+    }
+  }
+  listen();
+  setTimeout(syncAirbnb,1500);
+}
+boot();
 </script>
 </body>
 </html>
