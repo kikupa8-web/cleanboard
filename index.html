@@ -329,9 +329,7 @@ async function initDefaults(){
   const pSnap = await db.ref('properties').once('value');
   if(!pSnap.exists()){
     const defaults = [
-      {name:'@marugame',color:'#1D9E75',bgColor:'#e6f7f1'},
-      {name:'桜ハウス',color:'#378ADD',bgColor:'#e3f0fc'},
-      {name:'高知東',color:'#D85A30',bgColor:'#fce8e0'}
+      {name:'@marugame',color:'#1D9E75',bgColor:'#e6f7f1'}
     ];
     for(const p of defaults){
       await db.ref('properties').push(p);
@@ -731,6 +729,12 @@ async function boot(){
   const pSnap=await db.ref('properties').once('value');
   const props=pSnap.val()||{};
   for(const[id,p] of Object.entries(props)){
+    if(p.name==='桜ハウス'||p.name==='高知東'){
+      await db.ref('properties/'+id).remove();
+      const tSnap=await db.ref('tasks').orderByChild('prop').equalTo(id).once('value');
+      if(tSnap.exists()){for(const tid of Object.keys(tSnap.val()))await db.ref('tasks/'+tid).remove()}
+      continue;
+    }
     if(p.name==='@marugame'&&!p.icalUrl){
       await db.ref('properties/'+id+'/icalUrl').set('https://www.airbnb.jp/calendar/ical/1435367472357209402.ics?t=3f1cb3b5d4ea4419b981b3970dea4fc4');
     }
