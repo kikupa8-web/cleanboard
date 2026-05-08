@@ -450,7 +450,10 @@ function renderCalendar(){
       if(!p)return'';
       const icons={checkin:'<i class="ti ti-login"></i> IN',checkout:'<i class="ti ti-logout"></i> OUT',stay:'<i class="ti ti-moon"></i>'};
       const cls={checkin:'airbnb-checkin',checkout:'airbnb-checkout',stay:'airbnb-stay'};
-      return`<span class="cal-chip airbnb ${cls[b.type]}" style="background:${p.bgColor||'#eee'};color:${p.color}" title="${esc(p.name)} ${b.summary||''}">${icons[b.type]} ${esc(p.name)}</span>`;
+      const guest=b.summary&&b.summary!=='Reserved'?b.summary:'';
+      const tip=`${p.name}${guest?' - '+guest:''}${b.nights?' ('+b.nights+'泊)':''}`;
+      const label=b.type==='stay'?icons.stay:icons[b.type]+(guest?' '+esc(guest):'');
+      return`<span class="cal-chip airbnb ${cls[b.type]}" style="background:${p.bgColor||'#eee'};color:${p.color}" title="${esc(tip)}">${label}</span>`;
     }).join('');
     chips+=dayTasks.map(t=>{
       const p=properties[t.prop];
@@ -667,15 +670,13 @@ function expandBookings(events,propId){
     if(ev.summary==='Not available'||ev.summary==='Airbnb (Not available)')continue;
     const s=new Date(ev.start),e=new Date(ev.end);
     const nights=Math.round((e-s)/(86400000));
-    for(let d=0;d<nights;d++){
+    result.push({date:ev.start,type:'checkin',propId,summary:ev.summary,desc:ev.desc,nights});
+    for(let d=1;d<nights;d++){
       const cur=new Date(s);cur.setDate(cur.getDate()+d);
       const dateStr=cur.toISOString().slice(0,10);
-      let type='stay';
-      if(d===0)type='checkin';
-      if(d===nights-1)type='checkout';
-      if(nights===1)type='checkout';
-      result.push({date:dateStr,type,propId,summary:ev.summary,nights});
+      result.push({date:dateStr,type:'stay',propId,summary:ev.summary,desc:ev.desc,nights});
     }
+    result.push({date:ev.end,type:'checkout',propId,summary:ev.summary,desc:ev.desc,nights});
   }
   return result;
 }
