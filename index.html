@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CleanBoard - 清掃管理</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f5;--surface:#fff;--surface2:#f0f0f0;--text:#1a1a1a;--text2:#666;
+  --border:#e0e0e0;--primary:#1D9E75;--primary-light:#e6f7f1;--danger:#d85a30;
+  --shadow:0 1px 3px rgba(0,0,0,.08);--radius:8px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#121212;--surface:#1e1e1e;--surface2:#2a2a2a;--text:#e0e0e0;--text2:#999;
+    --border:#333;--primary-light:#1a3a2e;--shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--primary);text-decoration:none}
+button{cursor:pointer;font-family:inherit;font-size:.875rem;border:none;border-radius:var(--radius);padding:.5rem 1rem;transition:opacity .15s}
+button:hover{opacity:.85}
+input,select,textarea{font-family:inherit;font-size:.875rem;border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .75rem;background:var(--surface);color:var(--text);width:100%}
+textarea{resize:vertical;min-height:60px}
+
+.navbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1rem;display:flex;align-items:center;height:52px;gap:.5rem;position:sticky;top:0;z-index:100}
+.navbar h1{font-size:1.1rem;font-weight:700;color:var(--primary);margin-right:1.5rem;white-space:nowrap}
+.nav-tabs{display:flex;gap:2px;overflow-x:auto}
+.nav-tab{padding:.5rem .85rem;border-radius:var(--radius);background:transparent;color:var(--text2);font-weight:500;white-space:nowrap}
+.nav-tab.active{background:var(--primary);color:#fff}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+.btn-add{background:var(--primary);color:#fff;display:flex;align-items:center;gap:.35rem;font-weight:600;padding:.45rem .9rem}
+.conn-indicator{font-size:.75rem;padding:.25rem .5rem;border-radius:99px;display:flex;align-items:center;gap:.3rem}
+.conn-indicator.online{background:#d4edda;color:#155724}
+.conn-indicator.offline{background:#f8d7da;color:#721c24}
+@media(prefers-color-scheme:dark){
+  .conn-indicator.online{background:#1a3a2e;color:#6dd49e}
+  .conn-indicator.offline{background:#3a1a1a;color:#e06060}
+}
+
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{width:250px;background:var(--surface);border-right:1px solid var(--border);padding:1rem;overflow-y:auto;flex-shrink:0}
+.sidebar h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:.5rem;margin-top:1rem}
+.sidebar h3:first-child{margin-top:0}
+.filter-item{display:flex;align-items:center;gap:.5rem;padding:.35rem .5rem;border-radius:var(--radius);cursor:pointer;font-size:.875rem}
+.filter-item:hover{background:var(--surface2)}
+.filter-item.active{background:var(--primary-light);font-weight:600}
+.filter-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.staff-item{padding:.35rem .5rem;font-size:.875rem;color:var(--text2)}
+.progress-section{margin-top:1.5rem}
+.progress-bar-bg{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:.35rem}
+.progress-bar-fill{height:100%;background:var(--primary);border-radius:99px;transition:width .3s}
+.progress-label{font-size:.75rem;color:var(--text2);margin-top:.25rem}
+
+.content{flex:1;padding:1.5rem;overflow-y:auto}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+.cal-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+.cal-header h2{font-size:1.1rem;min-width:160px}
+.cal-btn{background:var(--surface2);color:var(--text);padding:.4rem .75rem;font-size:.8rem}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cal-dow{background:var(--surface2);text-align:center;font-size:.7rem;font-weight:600;padding:.4rem;color:var(--text2)}
+.cal-day{background:var(--surface);min-height:90px;padding:.3rem;font-size:.75rem;vertical-align:top}
+.cal-day.other{opacity:.35}
+.cal-day.today{background:var(--primary-light)}
+.cal-day-num{font-weight:600;margin-bottom:.2rem}
+.cal-chip{display:block;padding:1px 4px;border-radius:3px;font-size:.65rem;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.cal-chip:hover{opacity:.8}
+
+.task-filters{display:flex;gap:.35rem;margin-bottom:1rem}
+.task-filter{padding:.35rem .7rem;border-radius:99px;background:var(--surface2);color:var(--text2);font-size:.8rem}
+.task-filter.active{background:var(--primary);color:#fff}
+.task-list{display:flex;flex-direction:column;gap:.5rem}
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;display:flex;align-items:flex-start;gap:.75rem;box-shadow:var(--shadow)}
+.task-card.done{opacity:.55}
+.task-check{width:20px;height:20px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all .15s}
+.task-check.checked{background:var(--primary);border-color:var(--primary);color:#fff}
+.task-info{flex:1;min-width:0}
+.task-prop{font-weight:600;font-size:.9rem}
+.task-meta{font-size:.78rem;color:var(--text2);margin-top:.15rem}
+.task-note{font-size:.78rem;color:var(--text2);margin-top:.25rem;font-style:italic}
+.task-delete{background:transparent;color:var(--text2);padding:.3rem;font-size:1rem}
+.task-delete:hover{color:var(--danger)}
+.task-prop-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.35rem;vertical-align:middle}
+
+.cl-select{max-width:300px;margin-bottom:1rem}
+.cl-room{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.75rem;overflow:hidden}
+.cl-room-header{padding:.6rem .85rem;font-weight:600;font-size:.9rem;background:var(--surface2);display:flex;align-items:center;justify-content:space-between}
+.cl-room-progress{font-size:.75rem;color:var(--text2);font-weight:400}
+.cl-items{padding:.5rem .85rem}
+.cl-item{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;font-size:.875rem;cursor:pointer}
+.cl-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary)}
+.cl-progress-all{margin-top:.5rem}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow)}
+.stat-value{font-size:1.8rem;font-weight:700;color:var(--primary)}
+.stat-label{font-size:.78rem;color:var(--text2);margin-top:.2rem}
+.chart-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.chart-section h3{font-size:.9rem;margin-bottom:.75rem}
+.bar-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;font-size:.8rem}
+.bar-name{width:80px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:4px;transition:width .3s;display:flex;align-items:center;padding-left:6px;font-size:.7rem;color:#fff;font-weight:600;min-width:fit-content}
+.bar-count{width:30px;flex-shrink:0;text-align:center;font-weight:600}
+
+.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.settings-section h3{font-size:.95rem;margin-bottom:.75rem}
+.setting-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;font-size:.875rem}
+.setting-row .filter-dot{flex-shrink:0}
+.setting-row span{flex:1}
+.btn-sm{padding:.3rem .6rem;font-size:.78rem;border-radius:var(--radius)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-primary{background:var(--primary);color:#fff}
+.add-row{display:flex;gap:.5rem;margin-top:.5rem}
+.add-row input{flex:1}
+.color-input{width:50px!important;padding:2px!important;height:34px;cursor:pointer}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:200;padding:1rem}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border-radius:12px;padding:1.5rem;width:100%;max-width:420px;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.modal h2{font-size:1.1rem;margin-bottom:1rem}
+.modal-field{margin-bottom:.85rem}
+.modal-field label{display:block;font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:.3rem}
+.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.2rem}
+.btn-cancel{background:var(--surface2);color:var(--text)}
+
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text2)}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .content{padding:1rem}
+  .cal-day{min-height:60px}
+  .navbar h1{font-size:.95rem;margin-right:.5rem}
+  .nav-tab{padding:.4rem .6rem;font-size:.8rem}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <h1><i class="ti ti-spray"></i> CleanBoard</h1>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-tab="calendar"><i class="ti ti-calendar"></i> カレンダー</button>
+    <button class="nav-tab" data-tab="tasks"><i class="ti ti-list-check"></i> タスク</button>
+    <button class="nav-tab" data-tab="checklist"><i class="ti ti-checkbox"></i> チェックリスト</button>
+    <button class="nav-tab" data-tab="stats"><i class="ti ti-chart-bar"></i> 集計</button>
+    <button class="nav-tab" data-tab="settings"><i class="ti ti-settings"></i> 設定</button>
+  </div>
+  <div class="nav-right">
+    <span id="connIndicator" class="conn-indicator offline"><i class="ti ti-wifi-off"></i> 接続中...</span>
+    <button class="btn-add" id="btnAddTask"><i class="ti ti-plus"></i> タスク追加</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <h3>物件フィルター</h3>
+    <div id="propFilters"></div>
+    <h3>スタッフ</h3>
+    <div id="staffList"></div>
+    <div class="progress-section">
+      <h3>今月の進捗</h3>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-label" id="progressLabel">0 / 0 件完了</div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <!-- Calendar -->
+    <div class="tab-content active" id="tab-calendar">
+      <div class="cal-header">
+        <button class="cal-btn" id="calPrev"><i class="ti ti-chevron-left"></i></button>
+        <h2 id="calTitle"></h2>
+        <button class="cal-btn" id="calNext"><i class="ti ti-chevron-right"></i></button>
+        <button class="cal-btn" id="calToday">今月</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="tab-content" id="tab-tasks">
+      <div class="task-filters">
+        <button class="task-filter active" data-filter="all">すべて</button>
+        <button class="task-filter" data-filter="undone">未完了</button>
+        <button class="task-filter" data-filter="done">完了済み</button>
+      </div>
+      <div class="task-list" id="taskList"></div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="tab-content" id="tab-checklist">
+      <select class="cl-select" id="clPropSelect"></select>
+      <div id="clRooms"></div>
+      <div class="cl-progress-all">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="clProgressFill" style="width:0%"></div></div>
+        <div class="progress-label" id="clProgressLabel">0 / 0 項目完了</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="tab-content" id="tab-stats">
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="chart-section"><h3>スタッフ別 完了件数</h3><div id="chartStaff"></div></div>
+      <div class="chart-section"><h3>物件別 タスク件数</h3><div id="chartProp"></div></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="tab-content" id="tab-settings">
+      <div class="settings-section">
+        <h3><i class="ti ti-building"></i> 物件管理</h3>
+        <div id="settingsProps"></div>
+        <div class="add-row">
+          <input id="newPropName" placeholder="物件名">
+          <input type="color" id="newPropColor" value="#1D9E75" class="color-input">
+          <button class="btn-sm btn-primary" id="btnAddProp">追加</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3><i class="ti ti-users"></i> スタッフ管理</h3>
+        <div id="settingsStaff"></div>
+        <div class="add-row">
+          <input id="newStaffName" placeholder="スタッフ名">
+          <button class="btn-sm btn-primary" id="btnAddStaff">追加</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2><i class="ti ti-plus"></i> タスク追加</h2>
+    <div class="modal-field">
+      <label>物件</label>
+      <select id="modalProp"></select>
+    </div>
+    <div class="modal-field">
+      <label>日付</label>
+      <input type="date" id="modalDate">
+    </div>
+    <div class="modal-field">
+      <label>担当スタッフ</label>
+      <select id="modalStaff"></select>
+    </div>
+    <div class="modal-field">
+      <label>備考</label>
+      <textarea id="modalNote" placeholder="清掃に関するメモ..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnModalCancel">キャンセル</button>
+      <button class="btn-primary" id="btnModalSave">追加</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyBzQmm4IU31ZYTgJm818DpGwLiJkqzNMiE",
+  authDomain:"cleanbnb-337a1.firebaseapp.com",
+  databaseURL:"https://cleanbnb-337a1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"cleanbnb-337a1",
+  storageBucket:"cleanbnb-337a1.firebasestorage.app",
+  messagingSenderId:"718699618691",
+  appId:"1:718699618691:web:775ccc2734bd7a60e296b6"
+});
+
+const db = firebase.database();
+let properties = {}, staff = {}, tasks = {}, checklist = {};
+let activeFilter = 'all', activePropFilter = null;
+let calYear, calMonth;
+
+const ROOMS = [
+  {name:'リビング', items:['床の掃除機がけ','テーブル拭き','ソファ整頓','ゴミ箱交換','窓拭き']},
+  {name:'キッチン', items:['シンク清掃','コンロ清掃','冷蔵庫チェック','食器確認','ゴミ分別']},
+  {name:'バスルーム', items:['浴槽清掃','トイレ清掃','洗面台拭き','鏡磨き','アメニティ補充']},
+  {name:'寝室', items:['シーツ交換','枕カバー交換','床清掃','クローゼット確認','エアコンフィルター']}
+];
+
+const now = new Date();
+calYear = now.getFullYear();
+calMonth = now.getMonth();
+
+// Connection
+const connRef = db.ref('.info/connected');
+connRef.on('value', snap => {
+  const el = document.getElementById('connIndicator');
+  if(snap.val()){
+    el.className='conn-indicator online';
+    el.innerHTML='<i class="ti ti-wifi"></i> 接続中';
+  } else {
+    el.className='conn-indicator offline';
+    el.innerHTML='<i class="ti ti-wifi-off"></i> オフライン';
+  }
+});
+
+// Init default data
+async function initDefaults(){
+  const pSnap = await db.ref('properties').once('value');
+  if(!pSnap.exists()){
+    const defaults = [
+      {name:'@marugame',color:'#1D9E75',bgColor:'#e6f7f1'},
+      {name:'桜ハウス',color:'#378ADD',bgColor:'#e3f0fc'},
+      {name:'高知東',color:'#D85A30',bgColor:'#fce8e0'}
+    ];
+    for(const p of defaults){
+      await db.ref('properties').push(p);
+    }
+  }
+  const sSnap = await db.ref('staff').once('value');
+  if(!sSnap.exists()){
+    for(const n of ['田中さん','山田さん','佐藤さん']){
+      await db.ref('staff').push({name:n});
+    }
+  }
+  const tSnap = await db.ref('tasks').once('value');
+  if(!tSnap.exists()){
+    const pSnap2 = await db.ref('properties').once('value');
+    const sSnap2 = await db.ref('staff').once('value');
+    const pIds = Object.keys(pSnap2.val()||{});
+    const sIds = Object.keys(sSnap2.val()||{});
+    const y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0');
+    const samples=[
+      {p:0,d:'03',s:0,note:'チェックイン前清掃',done:false},
+      {p:1,d:'05',s:1,note:'退去後清掃',done:true},
+      {p:2,d:'08',s:2,note:'定期清掃',done:false},
+      {p:0,d:'12',s:1,note:'リネン交換あり',done:false},
+      {p:1,d:'15',s:0,note:'',done:false},
+      {p:2,d:'20',s:2,note:'エアコンフィルター清掃',done:false},
+      {p:0,d:'25',s:0,note:'ゲスト到着前',done:false}
+    ];
+    for(const s of samples){
+      await db.ref('tasks').push({
+        prop:pIds[s.p]||pIds[0],
+        date:`${y}-${m}-${s.d}`,
+        staff:sIds[s.s]||sIds[0],
+        note:s.note,
+        done:s.done,
+        createdAt:Date.now()
+      });
+    }
+  }
+}
+
+// Listen
+function listen(){
+  db.ref('properties').on('value', snap=>{
+    properties=snap.val()||{};
+    render();
+  });
+  db.ref('staff').on('value', snap=>{
+    staff=snap.val()||{};
+    render();
+  });
+  db.ref('tasks').on('value', snap=>{
+    tasks=snap.val()||{};
+    render();
+  });
+  db.ref('checklist').on('value', snap=>{
+    checklist=snap.val()||{};
+    renderChecklist();
+  });
+}
+
+function render(){
+  renderSidebar();
+  renderCalendar();
+  renderTasks();
+  renderChecklist();
+  renderStats();
+  renderSettings();
+  renderModalSelects();
+}
+
+// Sidebar
+function renderSidebar(){
+  let html='<div class="filter-item'+(activePropFilter===null?' active':'')+'" onclick="setPropFilter(null)"><span class="filter-dot" style="background:#888"></span>すべて</div>';
+  for(const[id,p] of Object.entries(properties)){
+    html+=`<div class="filter-item${activePropFilter===id?' active':''}" onclick="setPropFilter('${id}')"><span class="filter-dot" style="background:${p.color}"></span>${esc(p.name)}</div>`;
+  }
+  document.getElementById('propFilters').innerHTML=html;
+  let shtml='';
+  for(const s of Object.values(staff)){
+    shtml+=`<div class="staff-item"><i class="ti ti-user"></i> ${esc(s.name)}</div>`;
+  }
+  document.getElementById('staffList').innerHTML=shtml;
+  updateProgress();
+}
+
+function setPropFilter(id){activePropFilter=id;render()}
+
+function updateProgress(){
+  const y=now.getFullYear(),m=now.getMonth();
+  const monthTasks=Object.values(tasks).filter(t=>{const d=new Date(t.date);return d.getFullYear()===y&&d.getMonth()===m});
+  const done=monthTasks.filter(t=>t.done).length;
+  const total=monthTasks.length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=`${done} / ${total} 件完了 (${pct}%)`;
+}
+
+// Calendar
+function renderCalendar(){
+  document.getElementById('calTitle').textContent=`${calYear}年 ${calMonth+1}月`;
+  const first=new Date(calYear,calMonth,1);
+  const lastDay=new Date(calYear,calMonth+1,0).getDate();
+  const startDow=first.getDay();
+  const dows=['日','月','火','水','木','金','土'];
+  let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const prevLast=new Date(calYear,calMonth,0).getDate();
+  for(let i=startDow-1;i>=0;i--){
+    html+=`<div class="cal-day other"><div class="cal-day-num">${prevLast-i}</div></div>`;
+  }
+  const today=new Date();
+  for(let d=1;d<=lastDay;d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    const dayTasks=Object.values(tasks).filter(t=>t.date===dateStr&&(activePropFilter===null||t.prop===activePropFilter));
+    let chips=dayTasks.map(t=>{
+      const p=properties[t.prop];
+      if(!p)return'';
+      const s=staff[t.staff];
+      return`<span class="cal-chip" style="background:${p.bgColor||'#eee'};color:${p.color}" title="${esc(p.name)} - ${s?esc(s.name):''}">${esc(p.name)}</span>`;
+    }).join('');
+    html+=`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div>${chips}</div>`;
+  }
+  const totalCells=startDow+lastDay;
+  const rem=totalCells%7?7-totalCells%7:0;
+  for(let i=1;i<=rem;i++){
+    html+=`<div class="cal-day other"><div class="cal-day-num">${i}</div></div>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
+}
+
+document.getElementById('calPrev').onclick=()=>{calMonth--;if(calMonth<0){calMonth=11;calYear--}renderCalendar()};
+document.getElementById('calNext').onclick=()=>{calMonth++;if(calMonth>11){calMonth=0;calYear++}renderCalendar()};
+document.getElementById('calToday').onclick=()=>{calYear=now.getFullYear();calMonth=now.getMonth();renderCalendar()};
+
+// Tasks
+function renderTasks(){
+  const filtered=Object.entries(tasks).filter(([,t])=>{
+    if(activePropFilter&&t.prop!==activePropFilter)return false;
+    if(activeFilter==='done')return t.done;
+    if(activeFilter==='undone')return!t.done;
+    return true;
+  }).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+
+  if(!filtered.length){
+    document.getElementById('taskList').innerHTML='<div class="empty-state"><i class="ti ti-clipboard-off" style="font-size:2rem"></i><p>タスクがありません</p></div>';
+    return;
+  }
+  document.getElementById('taskList').innerHTML=filtered.map(([id,t])=>{
+    const p=properties[t.prop];
+    const s=staff[t.staff];
+    return`<div class="task-card${t.done?' done':''}">
+      <div class="task-check${t.done?' checked':''}" onclick="toggleTask('${id}')"><i class="ti ti-check" style="font-size:.8rem;${t.done?'':'visibility:hidden'}"></i></div>
+      <div class="task-info">
+        <div class="task-prop"><span class="task-prop-dot" style="background:${p?p.color:'#888'}"></span>${p?esc(p.name):'不明'}</div>
+        <div class="task-meta"><i class="ti ti-calendar-event"></i> ${t.date} &nbsp; <i class="ti ti-user"></i> ${s?esc(s.name):'未割当'}</div>
+        ${t.note?`<div class="task-note">${esc(t.note)}</div>`:''}
+      </div>
+      <button class="task-delete" onclick="deleteTask('${id}')"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function toggleTask(id){db.ref('tasks/'+id+'/done').transaction(v=>!v)}
+function deleteTask(id){if(confirm('このタスクを削除しますか？'))db.ref('tasks/'+id).remove()}
+
+document.querySelectorAll('.task-filter').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.task-filter').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    activeFilter=b.dataset.filter;
+    renderTasks();
+  };
+});
+
+// Checklist
+function renderChecklist(){
+  const sel=document.getElementById('clPropSelect');
+  const prev=sel.value;
+  sel.innerHTML=Object.entries(properties).map(([id,p])=>`<option value="${id}">${esc(p.name)}</option>`).join('');
+  if(prev&&properties[prev])sel.value=prev;
+  const propId=sel.value;
+  if(!propId){document.getElementById('clRooms').innerHTML='<div class="empty-state">物件を選択してください</div>';return}
+  const propCl=checklist[propId]||{};
+  let totalItems=0,checkedItems=0;
+  let html=ROOMS.map((room,ri)=>{
+    const roomData=propCl[ri]||{};
+    const roomChecked=room.items.filter((_,ii)=>roomData[ii]&&roomData[ii].checked).length;
+    totalItems+=room.items.length;
+    checkedItems+=roomChecked;
+    const roomPct=Math.round(roomChecked/room.items.length*100);
+    return`<div class="cl-room">
+      <div class="cl-room-header">${room.name}<span class="cl-room-progress">${roomChecked}/${room.items.length} (${roomPct}%)</span></div>
+      <div class="cl-items">${room.items.map((item,ii)=>`<label class="cl-item"><input type="checkbox" ${roomData[ii]&&roomData[ii].checked?'checked':''} onchange="toggleCl('${propId}',${ri},${ii},this.checked)"> ${esc(item)}</label>`).join('')}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('clRooms').innerHTML=html;
+  const pct=totalItems?Math.round(checkedItems/totalItems*100):0;
+  document.getElementById('clProgressFill').style.width=pct+'%';
+  document.getElementById('clProgressLabel').textContent=`${checkedItems} / ${totalItems} 項目完了 (${pct}%)`;
+}
+document.getElementById('clPropSelect').onchange=renderChecklist;
+
+function toggleCl(propId,ri,ii,val){db.ref(`checklist/${propId}/${ri}/${ii}/checked`).set(val)}
+
+// Stats
+function renderStats(){
+  const y=now.getFullYear(),m=now.getMonth();
+  const monthTasks=Object.values(tasks).filter(t=>{const d=new Date(t.date);return d.getFullYear()===y&&d.getMonth()===m});
+  const done=monthTasks.filter(t=>t.done).length;
+  const total=monthTasks.length;
+  const pct=total?Math.round(done/total*100):0;
+  const activeStaff=new Set(monthTasks.map(t=>t.staff)).size;
+
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-value">${total}</div><div class="stat-label">今月のタスク</div></div>
+    <div class="stat-card"><div class="stat-value">${pct}%</div><div class="stat-label">完了率</div></div>
+    <div class="stat-card"><div class="stat-value">${done}</div><div class="stat-label">完了件数</div></div>
+    <div class="stat-card"><div class="stat-value">${activeStaff}</div><div class="stat-label">稼働スタッフ</div></div>`;
+
+  // Staff chart
+  const staffCounts={};
+  for(const s of Object.keys(staff))staffCounts[s]=0;
+  monthTasks.filter(t=>t.done).forEach(t=>{if(staffCounts[t.staff]!==undefined)staffCounts[t.staff]++});
+  const maxStaff=Math.max(1,...Object.values(staffCounts));
+  document.getElementById('chartStaff').innerHTML=Object.entries(staffCounts).map(([id,c])=>{
+    const s=staff[id];if(!s)return'';
+    const w=Math.round(c/maxStaff*100);
+    return`<div class="bar-row"><span class="bar-name">${esc(s.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:var(--primary)">${c}</div></div><span class="bar-count">${c}</span></div>`;
+  }).join('');
+
+  // Prop chart
+  const propCounts={};
+  for(const p of Object.keys(properties))propCounts[p]=0;
+  monthTasks.forEach(t=>{if(propCounts[t.prop]!==undefined)propCounts[t.prop]++});
+  const maxProp=Math.max(1,...Object.values(propCounts));
+  document.getElementById('chartProp').innerHTML=Object.entries(propCounts).map(([id,c])=>{
+    const p=properties[id];if(!p)return'';
+    const w=Math.round(c/maxProp*100);
+    return`<div class="bar-row"><span class="bar-name">${esc(p.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:${p.color}">${c}</div></div><span class="bar-count">${c}</span></div>`;
+  }).join('');
+}
+
+// Settings
+function renderSettings(){
+  document.getElementById('settingsProps').innerHTML=Object.entries(properties).map(([id,p])=>`<div class="setting-row"><span class="filter-dot" style="background:${p.color}"></span><span>${esc(p.name)}</span><button class="btn-sm btn-danger" onclick="deleteProp('${id}')"><i class="ti ti-trash"></i></button></div>`).join('');
+  document.getElementById('settingsStaff').innerHTML=Object.entries(staff).map(([id,s])=>`<div class="setting-row"><i class="ti ti-user" style="color:var(--text2)"></i><span>${esc(s.name)}</span><button class="btn-sm btn-danger" onclick="deleteStaff('${id}')"><i class="ti ti-trash"></i></button></div>`).join('');
+}
+
+document.getElementById('btnAddProp').onclick=()=>{
+  const name=document.getElementById('newPropName').value.trim();
+  const color=document.getElementById('newPropColor').value;
+  if(!name)return;
+  const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
+  const bgColor=`rgba(${r},${g},${b},0.12)`;
+  db.ref('properties').push({name,color,bgColor});
+  document.getElementById('newPropName').value='';
+};
+document.getElementById('btnAddStaff').onclick=()=>{
+  const name=document.getElementById('newStaffName').value.trim();
+  if(!name)return;
+  db.ref('staff').push({name});
+  document.getElementById('newStaffName').value='';
+};
+function deleteProp(id){if(confirm('この物件を削除しますか？'))db.ref('properties/'+id).remove()}
+function deleteStaff(id){if(confirm('このスタッフを削除しますか？'))db.ref('staff/'+id).remove()}
+
+// Modal
+function renderModalSelects(){
+  document.getElementById('modalProp').innerHTML=Object.entries(properties).map(([id,p])=>`<option value="${id}">${esc(p.name)}</option>`).join('');
+  document.getElementById('modalStaff').innerHTML=Object.entries(staff).map(([id,s])=>`<option value="${id}">${esc(s.name)}</option>`).join('');
+}
+
+document.getElementById('btnAddTask').onclick=()=>{
+  document.getElementById('modalDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('modalNote').value='';
+  document.getElementById('modalOverlay').classList.add('show');
+};
+document.getElementById('btnModalCancel').onclick=()=>document.getElementById('modalOverlay').classList.remove('show');
+document.getElementById('modalOverlay').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('show')};
+
+document.getElementById('btnModalSave').onclick=()=>{
+  const prop=document.getElementById('modalProp').value;
+  const date=document.getElementById('modalDate').value;
+  const staffId=document.getElementById('modalStaff').value;
+  const note=document.getElementById('modalNote').value.trim();
+  if(!prop||!date||!staffId)return alert('必須項目を入力してください');
+  db.ref('tasks').push({prop,date,staff:staffId,note,done:false,createdAt:Date.now()});
+  document.getElementById('modalOverlay').classList.remove('show');
+};
+
+// Tabs
+document.querySelectorAll('.nav-tab').forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  };
+});
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+// Boot
+initDefaults().then(listen);
+</script>
+</body>
+</html>
