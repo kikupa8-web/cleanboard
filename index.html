@@ -495,7 +495,7 @@ function renderTasks(){
       <div class="task-check${t.done?' checked':''}" onclick="toggleTask('${id}')"><i class="ti ti-check" style="font-size:.8rem;${t.done?'':'visibility:hidden'}"></i></div>
       <div class="task-info">
         <div class="task-prop"><span class="task-prop-dot" style="background:${p?p.color:'#888'}"></span>${p?esc(p.name):'不明'}</div>
-        <div class="task-meta"><i class="ti ti-calendar-event"></i> ${t.date} &nbsp; <i class="ti ti-user"></i> ${s?esc(s.name):'未割当'}</div>
+        <div class="task-meta"><i class="ti ti-calendar-event"></i> ${t.date} &nbsp; <i class="ti ti-user"></i> ${s?esc(s.name):'未割当'}${t.source==='airbnb'?' &nbsp;<span style="background:#FF5A5F;color:#fff;padding:1px 5px;border-radius:3px;font-size:.65rem">Airbnb</span>':''}</div>
         ${t.note?`<div class="task-note">${esc(t.note)}</div>`:''}
       </div>
       <button class="task-delete" onclick="deleteTask('${id}')"><i class="ti ti-trash"></i></button>
@@ -702,11 +702,44 @@ async function syncAirbnb(){
       }
     }catch(e){console.error('iCal sync error for '+p.name,e)}
   }
+  if(hasIcal){
+    document.getElementById('airbnbLegend').style.display='flex';
+    await autoCreateCheckoutTasks();
+  }
   btn.classList.remove('syncing');
   btn.innerHTML='<i class="ti ti-refresh"></i> Airbnb同期';
-  if(hasIcal)document.getElementById('airbnbLegend').style.display='flex';
   renderCalendar();
   renderTasks();
+}
+
+async function autoCreateCheckoutTasks(){
+  const existingTasks=Object.values(tasks);
+  const staffIds=Object.keys(staff);
+  if(!staffIds.length)return;
+  let created=0;
+  for(const[date,evts] of Object.entries(airbnbEvents)){
+    const checkouts=evts.filter(e=>e.type==='checkout');
+    for(const co of checkouts){
+      const already=existingTasks.some(t=>t.prop===co.propId&&t.date===date&&t.source==='airbnb');
+      if(already)continue;
+      const assignee=staffIds[created%staffIds.length];
+      const guest=co.summary&&co.summary!=='Reserved'?co.summary:'';
+      await db.ref('tasks').push({
+        prop:co.propId,
+        date:date,
+        staff:assignee,
+        note:'チェックアウト清掃'+(guest?' ('+guest+')':''),
+        done:false,
+        source:'airbnb',
+        createdAt:Date.now()
+      });
+      created++;
+    }
+  }
+  if(created>0){
+    const tSnap=await db.ref('tasks').once('value');
+    tasks=tSnap.val()||{};
+  }
 }
 
 document.getElementById('btnSync').onclick=syncAirbnb;
