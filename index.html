@@ -341,32 +341,15 @@ async function initDefaults(){
       await db.ref('staff').push({name:n});
     }
   }
-  const tSnap = await db.ref('tasks').once('value');
-  if(!tSnap.exists()){
-    const pSnap2 = await db.ref('properties').once('value');
-    const sSnap2 = await db.ref('staff').once('value');
-    const pIds = Object.keys(pSnap2.val()||{});
-    const sIds = Object.keys(sSnap2.val()||{});
-    const y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0');
-    const samples=[
-      {p:0,d:'03',s:0,note:'チェックイン前清掃',done:false},
-      {p:1,d:'05',s:1,note:'退去後清掃',done:true},
-      {p:2,d:'08',s:2,note:'定期清掃',done:false},
-      {p:0,d:'12',s:1,note:'リネン交換あり',done:false},
-      {p:1,d:'15',s:0,note:'',done:false},
-      {p:2,d:'20',s:2,note:'エアコンフィルター清掃',done:false},
-      {p:0,d:'25',s:0,note:'ゲスト到着前',done:false}
-    ];
-    for(const s of samples){
-      await db.ref('tasks').push({
-        prop:pIds[s.p]||pIds[0],
-        date:`${y}-${m}-${s.d}`,
-        staff:sIds[s.s]||sIds[0],
-        note:s.note,
-        done:s.done,
-        createdAt:Date.now()
-      });
+  const cleaned = await db.ref('_sampleCleaned').once('value');
+  if(!cleaned.exists()){
+    const tSnap = await db.ref('tasks').once('value');
+    if(tSnap.exists()){
+      for(const[tid,t] of Object.entries(tSnap.val())){
+        if(t.source!=='airbnb')await db.ref('tasks/'+tid).remove();
+      }
     }
+    await db.ref('_sampleCleaned').set(true);
   }
 }
 
