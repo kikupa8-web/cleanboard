@@ -116,6 +116,16 @@ textarea{resize:vertical;min-height:60px}
 .cl-items{padding:.5rem .85rem}
 .cl-item{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;font-size:.875rem;cursor:pointer}
 .cl-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary)}
+.cl-edit-item{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;font-size:.85rem}
+.cl-edit-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary)}
+.cl-edit-item.disabled{opacity:.4;text-decoration:line-through}
+.cl-add-item{display:flex;gap:.4rem;margin-top:.4rem;padding:.3rem 0}
+.cl-add-item input{flex:1;font-size:.82rem;padding:.35rem .5rem}
+.cl-add-item button{padding:.35rem .6rem;font-size:.78rem;background:var(--primary);color:#fff}
+.cl-add-room{margin-top:.75rem}
+.cl-add-room input{font-size:.82rem;padding:.35rem .5rem}
+.cl-edit-del{background:transparent;color:var(--text3);padding:.2rem;font-size:.9rem;margin-left:auto}
+.cl-edit-del:active{color:var(--danger)}
 .cl-progress-all{margin-top:.5rem}
 .progress-bar-bg{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:.35rem}
 .progress-bar-fill{height:100%;background:var(--primary);border-radius:99px;transition:width .3s}
@@ -225,7 +235,10 @@ textarea{resize:vertical;min-height:60px}
   <!-- Checklist -->
   <div class="tab-content" id="tab-checklist">
     <div class="checklist-section">
-      <select class="cl-select" id="clPropSelect"></select>
+      <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem">
+        <select class="cl-select" id="clPropSelect" style="flex:1;margin-bottom:0"></select>
+        <button class="btn-cl-edit" id="btnClEdit" style="background:var(--surface2);color:var(--text2);padding:.5rem .75rem;font-size:.8rem;white-space:nowrap;border:1px solid var(--border)"><i class="ti ti-pencil"></i> 編集</button>
+      </div>
       <div id="clRooms"></div>
       <div class="cl-progress-all">
         <div class="progress-bar-bg"><div class="progress-bar-fill" id="clProgressFill" style="width:0%"></div></div>
@@ -575,6 +588,19 @@ document.querySelectorAll('.task-filter').forEach(b=>{
 });
 
 // Checklist
+let clEditMode=false;
+let clTemplates={};
+db.ref('checklistTemplates').on('value',snap=>{clTemplates=snap.val()||{};renderChecklist()});
+
+function getTemplate(propId){
+  if(clTemplates[propId])return clTemplates[propId];
+  return ROOMS.map(r=>({name:r.name,items:r.items.slice()}));
+}
+
+function saveTemplate(propId,tmpl){
+  db.ref('checklistTemplates/'+propId).set(tmpl);
+}
+
 function renderChecklist(){
   const sel=document.getElementById('clPropSelect');
   const prev=sel.value;
@@ -582,17 +608,31 @@ function renderChecklist(){
   if(prev&&properties[prev])sel.value=prev;
   const propId=sel.value;
   if(!propId){document.getElementById('clRooms').innerHTML='<div class="empty-state">物件を選択してください</div>';return}
+
+  const btn=document.getElementById('btnClEdit');
+  btn.innerHTML=clEditMode?'<i class="ti ti-check"></i> 完了':'<i class="ti ti-pencil"></i> 編集';
+  btn.style.background=clEditMode?'var(--primary)':'var(--surface2)';
+  btn.style.color=clEditMode?'#fff':'var(--text2)';
+
+  const tmpl=getTemplate(propId);
+
+  if(clEditMode){
+    renderChecklistEdit(propId,tmpl);
+    return;
+  }
+
   const propCl=checklist[propId]||{};
   let totalItems=0,checkedItems=0;
-  let html=ROOMS.map((room,ri)=>{
+  let html=tmpl.map((room,ri)=>{
     const roomData=propCl[ri]||{};
-    const roomChecked=room.items.filter((_,ii)=>roomData[ii]&&roomData[ii].checked).length;
-    totalItems+=room.items.length;
+    const activeItems=room.items||[];
+    const roomChecked=activeItems.filter((_,ii)=>roomData[ii]&&roomData[ii].checked).length;
+    totalItems+=activeItems.length;
     checkedItems+=roomChecked;
-    const roomPct=Math.round(roomChecked/room.items.length*100);
+    const roomPct=activeItems.length?Math.round(roomChecked/activeItems.length*100):0;
     return`<div class="cl-room">
-      <div class="cl-room-header">${room.name}<span class="cl-room-progress">${roomChecked}/${room.items.length} (${roomPct}%)</span></div>
-      <div class="cl-items">${room.items.map((item,ii)=>`<label class="cl-item"><input type="checkbox" ${roomData[ii]&&roomData[ii].checked?'checked':''} onchange="toggleCl('${propId}',${ri},${ii},this.checked)"> ${esc(item)}</label>`).join('')}</div>
+      <div class="cl-room-header">${esc(room.name)}<span class="cl-room-progress">${roomChecked}/${activeItems.length} (${roomPct}%)</span></div>
+      <div class="cl-items">${activeItems.map((item,ii)=>`<label class="cl-item"><input type="checkbox" ${roomData[ii]&&roomData[ii].checked?'checked':''} onchange="toggleCl('${propId}',${ri},${ii},this.checked)"> ${esc(item)}</label>`).join('')}</div>
     </div>`;
   }).join('');
   document.getElementById('clRooms').innerHTML=html;
@@ -600,7 +640,59 @@ function renderChecklist(){
   document.getElementById('clProgressFill').style.width=pct+'%';
   document.getElementById('clProgressLabel').textContent=`${checkedItems} / ${totalItems} 項目完了 (${pct}%)`;
 }
-document.getElementById('clPropSelect').onchange=renderChecklist;
+
+function renderChecklistEdit(propId,tmpl){
+  let html=tmpl.map((room,ri)=>{
+    return`<div class="cl-room">
+      <div class="cl-room-header">${esc(room.name)}<button class="cl-edit-del" onclick="clDeleteRoom('${propId}',${ri})"><i class="ti ti-trash"></i></button></div>
+      <div class="cl-items">
+        ${(room.items||[]).map((item,ii)=>`<div class="cl-edit-item"><span style="flex:1">${esc(item)}</span><button class="cl-edit-del" onclick="clDeleteItem('${propId}',${ri},${ii})"><i class="ti ti-x"></i></button></div>`).join('')}
+        <div class="cl-add-item"><input id="clNewItem_${ri}" placeholder="項目を追加..."><button onclick="clAddItem('${propId}',${ri})"><i class="ti ti-plus"></i></button></div>
+      </div>
+    </div>`;
+  }).join('');
+  html+=`<div class="cl-add-room"><div class="add-row"><input id="clNewRoom" placeholder="部屋を追加..."><button class="btn-sm btn-primary" onclick="clAddRoom('${propId}')"><i class="ti ti-plus"></i> 追加</button></div></div>`;
+  document.getElementById('clRooms').innerHTML=html;
+  document.getElementById('clProgressFill').style.width='0%';
+  document.getElementById('clProgressLabel').textContent='編集モード';
+}
+
+function clAddItem(propId,ri){
+  const input=document.getElementById('clNewItem_'+ri);
+  const val=input.value.trim();
+  if(!val)return;
+  const tmpl=getTemplate(propId);
+  if(!tmpl[ri].items)tmpl[ri].items=[];
+  tmpl[ri].items.push(val);
+  saveTemplate(propId,tmpl);
+  input.value='';
+}
+
+function clDeleteItem(propId,ri,ii){
+  const tmpl=getTemplate(propId);
+  tmpl[ri].items.splice(ii,1);
+  saveTemplate(propId,tmpl);
+}
+
+function clAddRoom(propId){
+  const input=document.getElementById('clNewRoom');
+  const val=input.value.trim();
+  if(!val)return;
+  const tmpl=getTemplate(propId);
+  tmpl.push({name:val,items:[]});
+  saveTemplate(propId,tmpl);
+  input.value='';
+}
+
+function clDeleteRoom(propId,ri){
+  if(!confirm(getTemplate(propId)[ri].name+'を削除しますか？'))return;
+  const tmpl=getTemplate(propId);
+  tmpl.splice(ri,1);
+  saveTemplate(propId,tmpl);
+}
+
+document.getElementById('clPropSelect').onchange=()=>{clEditMode=false;renderChecklist()};
+document.getElementById('btnClEdit').onclick=()=>{clEditMode=!clEditMode;renderChecklist()};
 function toggleCl(propId,ri,ii,val){db.ref(`checklist/${propId}/${ri}/${ii}/checked`).set(val)}
 
 // Stats
