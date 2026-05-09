@@ -157,6 +157,49 @@ textarea{resize:vertical;min-height:60px}
 
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text2)}
 
+.co-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 8px;margin-bottom:3px;cursor:pointer;box-shadow:var(--shadow);transition:transform .1s,box-shadow .15s;font-size:.68rem;border-left:3px solid #FF5A5F}
+.co-card:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.12)}
+.co-card-header{display:flex;align-items:center;gap:4px;font-weight:700;color:#c0392b;margin-bottom:3px}
+.co-card-header i{font-size:.75rem}
+.co-card-row{display:flex;align-items:center;gap:4px;color:var(--text2);margin-bottom:1px;font-size:.63rem}
+.co-card-row i{font-size:.68rem;flex-shrink:0;width:14px;text-align:center}
+.co-card-row.next-in{color:#00796b;font-weight:600}
+.co-card-guest{font-size:.65rem;color:var(--text);font-weight:500}
+@media(prefers-color-scheme:dark){
+  .co-card-header{color:#f07070}
+  .co-card-row.next-in{color:#4dd0c0}
+}
+
+.detail-modal{max-width:480px}
+.detail-header{display:flex;align-items:center;gap:.5rem;margin-bottom:1.2rem;padding-bottom:.75rem;border-bottom:2px solid var(--border)}
+.detail-header .prop-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .7rem;border-radius:99px;font-weight:700;font-size:.9rem}
+.detail-header .close-btn{margin-left:auto;background:transparent;color:var(--text2);font-size:1.3rem;padding:.2rem .5rem}
+.detail-timeline{position:relative;padding-left:28px;margin-bottom:1.2rem}
+.detail-timeline::before{content:'';position:absolute;left:10px;top:8px;bottom:8px;width:2px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:1rem}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-22px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--border);background:var(--surface)}
+.tl-dot.checkout{border-color:#FF5A5F;background:#fde8e8}
+.tl-dot.clean{border-color:var(--primary);background:var(--primary-light)}
+.tl-dot.checkin{border-color:#00A699;background:#e0f5f2}
+.tl-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.15rem}
+.tl-label.checkout{color:#c0392b}
+.tl-label.clean{color:var(--primary)}
+.tl-label.checkin{color:#00796b}
+.tl-value{font-size:.9rem;font-weight:600}
+.tl-sub{font-size:.78rem;color:var(--text2)}
+.detail-fields{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+.detail-field{display:flex;flex-direction:column;gap:.25rem}
+.detail-field label{font-size:.7rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em}
+.detail-field input,.detail-field select{font-size:.85rem;padding:.45rem .6rem}
+.detail-field.full{grid-column:1/-1}
+@media(prefers-color-scheme:dark){
+  .tl-dot.checkout{background:#3b1515}
+  .tl-dot.checkin{background:#0d3b33}
+  .tl-label.checkout{color:#f07070}
+  .tl-label.checkin{color:#4dd0c0}
+}
+
 @media(max-width:768px){
   .sidebar{display:none}
   .content{padding:1rem}
@@ -296,6 +339,47 @@ textarea{resize:vertical;min-height:60px}
     <div class="modal-actions">
       <button class="btn-cancel" id="btnModalCancel">キャンセル</button>
       <button class="btn-primary" id="btnModalSave">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailOverlay">
+  <div class="modal detail-modal">
+    <div class="detail-header">
+      <span class="prop-badge" id="detailPropBadge"></span>
+      <button class="close-btn" id="detailClose"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="detail-timeline" id="detailTimeline"></div>
+    <div class="detail-fields">
+      <div class="detail-field">
+        <label><i class="ti ti-users"></i> 宿泊人数</label>
+        <input type="number" id="detailGuests" min="1" max="20" placeholder="未設定">
+      </div>
+      <div class="detail-field">
+        <label><i class="ti ti-user-check"></i> 清掃担当</label>
+        <select id="detailStaff"></select>
+      </div>
+      <div class="detail-field">
+        <label><i class="ti ti-clock"></i> 清掃予定時刻</label>
+        <input type="time" id="detailCleanTime" value="11:00">
+      </div>
+      <div class="detail-field">
+        <label><i class="ti ti-alert-circle"></i> 優先度</label>
+        <select id="detailPriority">
+          <option value="normal">通常</option>
+          <option value="high">高（ターンオーバー）</option>
+          <option value="deep">ディープクリーニング</option>
+        </select>
+      </div>
+      <div class="detail-field full">
+        <label><i class="ti ti-note"></i> 備考・特記事項</label>
+        <textarea id="detailNote" placeholder="特別な指示やメモ..." style="min-height:50px"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="detailCancel">キャンセル</button>
+      <button class="btn-primary" id="detailSave"><i class="ti ti-check"></i> 保存</button>
     </div>
   </div>
 </div>
@@ -454,12 +538,21 @@ function renderCalendar(){
     let chips=abEvents.map(b=>{
       const p=properties[b.propId];
       if(!p)return'';
-      const icons={checkin:'<i class="ti ti-login"></i>',checkout:'<i class="ti ti-logout"></i>',stay:'<i class="ti ti-moon-stars"></i>'};
-      const cls={checkin:'airbnb-checkin',checkout:'airbnb-checkout',stay:'airbnb-stay'};
       const guest=b.summary&&b.summary!=='Reserved'?b.summary:'';
-      const tip=`${p.name}${guest?' - '+guest:''}${b.nights?' ('+b.nights+'泊)':''}`;
-      const labels={checkin:icons.checkin+' IN'+(guest?' '+esc(guest):''),checkout:icons.checkout+' OUT'+(guest?' '+esc(guest):''),stay:icons.stay};
-      return`<span class="cal-chip airbnb ${cls[b.type]}" title="${esc(tip)}">${labels[b.type]}</span>`;
+      if(b.type==='checkout'){
+        const coKey=b.propId+'_'+b.date;
+        const ni=b.nextIn;
+        let nextHtml='';
+        if(ni){nextHtml=`<div class="co-card-row next-in"><i class="ti ti-login"></i> 次IN ${ni.date.slice(5).replace('-','/')} ${ni.nights}泊</div>`}
+        return`<div class="co-card" onclick="openDetail('${esc(coKey)}','${esc(b.propId)}','${esc(b.date)}')">
+          <div class="co-card-header"><i class="ti ti-logout"></i> OUT${guest?' <span class="co-card-guest">'+esc(guest)+'</span>':''}</div>
+          ${nextHtml}
+        </div>`;
+      }
+      if(b.type==='checkin'){
+        return`<span class="cal-chip airbnb airbnb-checkin" title="${esc(p.name)}${guest?' - '+guest:''} (${b.nights}泊)"><i class="ti ti-login"></i> IN${guest?' '+esc(guest):''}</span>`;
+      }
+      return`<span class="cal-chip airbnb airbnb-stay" title="${esc(p.name)} 宿泊中"><i class="ti ti-moon-stars"></i></span>`;
     }).join('');
     chips+=dayTasks.map(t=>{
       const p=properties[t.prop];
@@ -674,18 +767,21 @@ function parseICal(text){
 }
 
 function expandBookings(events,propId){
+  const sorted=events.filter(ev=>ev.summary!=='Not available'&&ev.summary!=='Airbnb (Not available)').sort((a,b)=>a.start.localeCompare(b.start));
   const result=[];
-  for(const ev of events){
-    if(ev.summary==='Not available'||ev.summary==='Airbnb (Not available)')continue;
+  for(let ei=0;ei<sorted.length;ei++){
+    const ev=sorted[ei];
     const s=new Date(ev.start),e=new Date(ev.end);
     const nights=Math.round((e-s)/(86400000));
+    const nextEv=sorted[ei+1]||null;
+    const nextIn=nextEv?{date:nextEv.start,summary:nextEv.summary,nights:Math.round((new Date(nextEv.end)-new Date(nextEv.start))/86400000)}:null;
     result.push({date:ev.start,type:'checkin',propId,summary:ev.summary,desc:ev.desc,nights});
     for(let d=1;d<nights;d++){
       const cur=new Date(s);cur.setDate(cur.getDate()+d);
       const dateStr=cur.toISOString().slice(0,10);
       result.push({date:dateStr,type:'stay',propId,summary:ev.summary,desc:ev.desc,nights});
     }
-    result.push({date:ev.end,type:'checkout',propId,summary:ev.summary,desc:ev.desc,nights});
+    result.push({date:ev.end,type:'checkout',propId,summary:ev.summary,desc:ev.desc,nights,nextIn});
   }
   return result;
 }
@@ -765,6 +861,72 @@ function renderSettingsIcal(){
 }
 
 function saveIcalUrl(propId,url){db.ref('properties/'+propId+'/icalUrl').set(url.trim())}
+
+// Detail Modal
+let currentDetailKey=null;
+let cleaningDetails={};
+
+db.ref('cleaningDetails').on('value',snap=>{cleaningDetails=snap.val()||{}});
+
+function openDetail(key,propId,date){
+  currentDetailKey=key;
+  const p=properties[propId];
+  if(!p)return;
+  const badge=document.getElementById('detailPropBadge');
+  badge.innerHTML=`<span class="filter-dot" style="background:${p.color}"></span> ${esc(p.name)}`;
+  badge.style.background=p.bgColor||'#eee';badge.style.color=p.color;
+
+  const allEvts=[];
+  for(const evts of Object.values(airbnbEvents)){for(const e of evts){if(e.propId===propId&&e.date===date&&e.type==='checkout')allEvts.push(e)}}
+  const co=allEvts[0];
+  let tlHtml='';
+  if(co){
+    const guest=co.summary&&co.summary!=='Reserved'?co.summary:'ゲスト';
+    tlHtml+=`<div class="tl-item"><div class="tl-dot checkout"></div><div class="tl-label checkout">チェックアウト</div><div class="tl-value">${date.slice(5).replace('-','/')} 11:00</div><div class="tl-sub">${esc(guest)} · ${co.nights}泊</div></div>`;
+    tlHtml+=`<div class="tl-item"><div class="tl-dot clean"></div><div class="tl-label clean">清掃</div><div class="tl-value">${date.slice(5).replace('-','/')} <span id="tlCleanTime">11:00</span></div><div class="tl-sub" id="tlCleanStaff">担当未定</div></div>`;
+    if(co.nextIn){
+      tlHtml+=`<div class="tl-item"><div class="tl-dot checkin"></div><div class="tl-label checkin">次のチェックイン</div><div class="tl-value">${co.nextIn.date.slice(5).replace('-','/')} 16:00</div><div class="tl-sub">${co.nextIn.summary&&co.nextIn.summary!=='Reserved'?esc(co.nextIn.summary):'ゲスト'} · ${co.nextIn.nights}泊</div></div>`;
+    }
+  }
+  document.getElementById('detailTimeline').innerHTML=tlHtml;
+
+  const staffSel=document.getElementById('detailStaff');
+  staffSel.innerHTML='<option value="">未割当</option>'+Object.entries(staff).map(([id,s])=>`<option value="${id}">${esc(s.name)}</option>`).join('');
+
+  const saved=cleaningDetails[key]||{};
+  document.getElementById('detailGuests').value=saved.guests||'';
+  staffSel.value=saved.staff||'';
+  document.getElementById('detailCleanTime').value=saved.cleanTime||'11:00';
+  document.getElementById('detailPriority').value=saved.priority||'normal';
+  document.getElementById('detailNote').value=saved.note||'';
+
+  document.getElementById('detailOverlay').classList.add('show');
+}
+
+document.getElementById('detailClose').onclick=()=>document.getElementById('detailOverlay').classList.remove('show');
+document.getElementById('detailCancel').onclick=()=>document.getElementById('detailOverlay').classList.remove('show');
+document.getElementById('detailOverlay').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('show')};
+
+document.getElementById('detailSave').onclick=()=>{
+  if(!currentDetailKey)return;
+  const data={
+    guests:parseInt(document.getElementById('detailGuests').value)||null,
+    staff:document.getElementById('detailStaff').value||null,
+    cleanTime:document.getElementById('detailCleanTime').value||'11:00',
+    priority:document.getElementById('detailPriority').value||'normal',
+    note:document.getElementById('detailNote').value.trim(),
+    updatedAt:Date.now()
+  };
+  db.ref('cleaningDetails/'+currentDetailKey).set(data);
+  const parts=currentDetailKey.split('_');
+  const propId=parts[0],date=parts.slice(1).join('_');
+  if(data.staff){
+    const existingTask=Object.entries(tasks).find(([,t])=>t.prop===propId&&t.date===date&&t.source==='airbnb');
+    if(existingTask){db.ref('tasks/'+existingTask[0]+'/staff').set(data.staff);db.ref('tasks/'+existingTask[0]+'/note').set('チェックアウト清掃'+(data.note?' - '+data.note:''))}
+  }
+  document.getElementById('detailOverlay').classList.remove('show');
+  render();
+};
 
 // Boot
 async function boot(){
