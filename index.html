@@ -58,25 +58,42 @@ textarea{resize:vertical;min-height:60px}
 .tab-content{display:none}
 .tab-content.active{display:block}
 
-.cal-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
-.cal-header h2{font-size:1.1rem;min-width:160px}
-.cal-btn{background:var(--surface2);color:var(--text);padding:.4rem .75rem;font-size:.8rem}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.cal-dow{background:var(--surface2);text-align:center;font-size:.7rem;font-weight:600;padding:.4rem;color:var(--text2)}
-.cal-day{background:var(--surface);min-height:90px;padding:.3rem;font-size:.75rem;vertical-align:top}
-.cal-day.other{opacity:.35}
-.cal-day.today{background:var(--primary-light)}
-.cal-day-num{font-weight:600;margin-bottom:.2rem}
-.cal-chip{display:block;padding:1px 4px;border-radius:3px;font-size:.65rem;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
-.cal-chip:hover{opacity:.8}
-.cal-chip.airbnb{border-left:2px solid #FF5A5F;font-weight:600}
-.cal-chip.airbnb-checkin{border-left:2px solid #00A699}
-.cal-chip.airbnb-checkout{border-left:2px solid #FF5A5F}
-.cal-chip.airbnb-stay{border-left:2px solid #484848;opacity:.7}
-.airbnb-legend{display:flex;gap:1rem;margin-bottom:.75rem;flex-wrap:wrap;font-size:.75rem;color:var(--text2)}
-.airbnb-legend span{display:flex;align-items:center;gap:.3rem}
-.airbnb-legend i{font-size:.9rem}
-.sync-btn{background:var(--surface2);color:var(--text);padding:.4rem .75rem;font-size:.8rem;display:flex;align-items:center;gap:.3rem}
+.cal-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+.cal-header h2{font-size:1.25rem;font-weight:700;min-width:170px;letter-spacing:.02em}
+.cal-btn{background:var(--surface2);color:var(--text);padding:.45rem .85rem;font-size:.82rem;font-weight:500;transition:background .15s}
+.cal-btn:hover{background:var(--border)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cal-dow{background:var(--surface2);text-align:center;font-size:.72rem;font-weight:700;padding:.5rem .2rem;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--border)}
+.cal-dow.weekend{color:var(--danger);opacity:.7}
+.cal-day{background:var(--surface);min-height:105px;padding:.4rem;font-size:.75rem;vertical-align:top;border:.5px solid var(--border);transition:background .1s;position:relative}
+.cal-day:hover{background:var(--surface2)}
+.cal-day.other{opacity:.3;background:var(--bg)}
+.cal-day.other:hover{opacity:.4}
+.cal-day.today{background:var(--primary-light);box-shadow:inset 0 0 0 2px var(--primary)}
+.cal-day.weekend{background:color-mix(in srgb,var(--surface) 92%,var(--danger))}
+.cal-day.weekend.today{background:var(--primary-light);box-shadow:inset 0 0 0 2px var(--primary)}
+.cal-day-num{font-weight:700;font-size:.82rem;margin-bottom:.35rem;display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%}
+.cal-day.today .cal-day-num{background:var(--primary);color:#fff}
+.cal-chip{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;font-size:.68rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:transform .1s,box-shadow .1s;line-height:1.4}
+.cal-chip:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.1);opacity:1}
+.cal-chip i{font-size:.72rem;flex-shrink:0}
+.cal-chip.airbnb{font-weight:600}
+.cal-chip.airbnb-checkin{background:#e0f5f2!important;color:#00796b!important;border-left:3px solid #00A699}
+.cal-chip.airbnb-checkout{background:#fde8e8!important;color:#c0392b!important;border-left:3px solid #FF5A5F}
+.cal-chip.airbnb-stay{background:var(--surface2)!important;color:var(--text2)!important;border-left:3px solid #bbb;opacity:.6;font-weight:400}
+.cal-chip.task-chip{border-left:3px solid currentColor}
+@media(prefers-color-scheme:dark){
+  .cal-chip.airbnb-checkin{background:#0d3b33!important;color:#4dd0c0!important}
+  .cal-chip.airbnb-checkout{background:#3b1515!important;color:#f07070!important}
+  .cal-chip.airbnb-stay{background:#2a2a2a!important;color:#888!important;border-left-color:#555}
+  .cal-day.weekend{background:color-mix(in srgb,var(--surface) 90%,#d85a30)}
+}
+.airbnb-legend{display:flex;gap:1.2rem;margin-bottom:.75rem;flex-wrap:wrap;font-size:.78rem;color:var(--text2);padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.airbnb-legend span{display:flex;align-items:center;gap:.4rem}
+.airbnb-legend i{font-size:1rem}
+.legend-dot{width:12px;height:4px;border-radius:2px;flex-shrink:0}
+.sync-btn{background:var(--surface2);color:var(--text);padding:.45rem .85rem;font-size:.82rem;display:flex;align-items:center;gap:.4rem;font-weight:500}
+.sync-btn:hover{background:var(--border)}
 .sync-btn.syncing{opacity:.5;pointer-events:none}
 .ical-input{font-size:.78rem;padding:.35rem .5rem}
 
@@ -143,7 +160,9 @@ textarea{resize:vertical;min-height:60px}
 @media(max-width:768px){
   .sidebar{display:none}
   .content{padding:1rem}
-  .cal-day{min-height:60px}
+  .cal-day{min-height:70px}
+  .cal-chip{font-size:.6rem;padding:1px 4px}
+  .cal-day-num{font-size:.75rem;width:20px;height:20px;line-height:20px}
   .navbar h1{font-size:.95rem;margin-right:.5rem}
   .nav-tab{padding:.4rem .6rem;font-size:.8rem}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
@@ -191,9 +210,10 @@ textarea{resize:vertical;min-height:60px}
         <button class="sync-btn" id="btnSync"><i class="ti ti-refresh"></i> Airbnb同期</button>
       </div>
       <div class="airbnb-legend" id="airbnbLegend" style="display:none">
-        <span><i class="ti ti-login" style="color:#00A699"></i> チェックイン</span>
-        <span><i class="ti ti-logout" style="color:#FF5A5F"></i> チェックアウト</span>
-        <span><i class="ti ti-moon" style="color:#484848"></i> 宿泊中</span>
+        <span><span class="legend-dot" style="background:#00A699"></span> チェックイン</span>
+        <span><span class="legend-dot" style="background:#FF5A5F"></span> チェックアウト（自動清掃タスク）</span>
+        <span><span class="legend-dot" style="background:#bbb"></span> 宿泊中</span>
+        <span><span class="legend-dot" style="background:var(--primary)"></span> 清掃タスク</span>
       </div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
@@ -417,39 +437,45 @@ function renderCalendar(){
   const lastDay=new Date(calYear,calMonth+1,0).getDate();
   const startDow=first.getDay();
   const dows=['日','月','火','水','木','金','土'];
-  let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  let html=dows.map((d,i)=>`<div class="cal-dow${i===0||i===6?' weekend':''}">${d}</div>`).join('');
   const prevLast=new Date(calYear,calMonth,0).getDate();
   for(let i=startDow-1;i>=0;i--){
-    html+=`<div class="cal-day other"><div class="cal-day-num">${prevLast-i}</div></div>`;
+    const dow=(startDow-i)%7;
+    html+=`<div class="cal-day other${dow===0||dow===6?' weekend':''}"><div class="cal-day-num">${prevLast-i}</div></div>`;
   }
   const today=new Date();
   for(let d=1;d<=lastDay;d++){
     const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
     const dayTasks=Object.values(tasks).filter(t=>t.date===dateStr&&(activePropFilter===null||t.prop===activePropFilter));
+    const dow=new Date(calYear,calMonth,d).getDay();
+    const isWeekend=dow===0||dow===6;
     const abEvents=(airbnbEvents[dateStr]||[]).filter(b=>activePropFilter===null||b.propId===activePropFilter);
     let chips=abEvents.map(b=>{
       const p=properties[b.propId];
       if(!p)return'';
-      const icons={checkin:'<i class="ti ti-login"></i> IN',checkout:'<i class="ti ti-logout"></i> OUT',stay:'<i class="ti ti-moon"></i>'};
+      const icons={checkin:'<i class="ti ti-login"></i>',checkout:'<i class="ti ti-logout"></i>',stay:'<i class="ti ti-moon-stars"></i>'};
       const cls={checkin:'airbnb-checkin',checkout:'airbnb-checkout',stay:'airbnb-stay'};
       const guest=b.summary&&b.summary!=='Reserved'?b.summary:'';
       const tip=`${p.name}${guest?' - '+guest:''}${b.nights?' ('+b.nights+'泊)':''}`;
-      const label=b.type==='stay'?icons.stay:icons[b.type]+(guest?' '+esc(guest):'');
-      return`<span class="cal-chip airbnb ${cls[b.type]}" style="background:${p.bgColor||'#eee'};color:${p.color}" title="${esc(tip)}">${label}</span>`;
+      const labels={checkin:icons.checkin+' IN'+(guest?' '+esc(guest):''),checkout:icons.checkout+' OUT'+(guest?' '+esc(guest):''),stay:icons.stay};
+      return`<span class="cal-chip airbnb ${cls[b.type]}" title="${esc(tip)}">${labels[b.type]}</span>`;
     }).join('');
     chips+=dayTasks.map(t=>{
       const p=properties[t.prop];
       if(!p)return'';
       const s=staff[t.staff];
-      return`<span class="cal-chip" style="background:${p.bgColor||'#eee'};color:${p.color}" title="${esc(p.name)} - ${s?esc(s.name):''}">${esc(p.name)}</span>`;
+      const icon=t.done?'<i class="ti ti-circle-check"></i>':'<i class="ti ti-spray"></i>';
+      const doneStyle=t.done?'opacity:.5;text-decoration:line-through':'';
+      return`<span class="cal-chip task-chip" style="background:${p.bgColor||'#eee'};color:${p.color};${doneStyle}" title="${esc(p.name)} - ${s?esc(s.name):''}">${icon} ${s?esc(s.name):''}</span>`;
     }).join('');
-    html+=`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div>${chips}</div>`;
+    html+=`<div class="cal-day${isToday?' today':''}${isWeekend?' weekend':''}"><div class="cal-day-num">${d}</div>${chips}</div>`;
   }
   const totalCells=startDow+lastDay;
   const rem=totalCells%7?7-totalCells%7:0;
   for(let i=1;i<=rem;i++){
-    html+=`<div class="cal-day other"><div class="cal-day-num">${i}</div></div>`;
+    const rdow=(totalCells+i-1)%7;
+    html+=`<div class="cal-day other${rdow===0||rdow===6?' weekend':''}"><div class="cal-day-num">${i}</div></div>`;
   }
   document.getElementById('calGrid').innerHTML=html;
 }
