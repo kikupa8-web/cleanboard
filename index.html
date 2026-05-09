@@ -944,12 +944,11 @@ document.getElementById('detailSave').onclick=()=>{
     updatedAt:Date.now()
   };
   db.ref('cleaningDetails/'+currentDetailKey).set(data);
-  const propId=currentDetailKey.split('_')[0];
+  const parts=currentDetailKey.split('_');
+  const propId=parts[0],date=parts.slice(1).join('_');
   if(data.entry)db.ref('properties/'+propId+'/entry').set(data.entry);
   if(data.address)db.ref('properties/'+propId+'/address').set(data.address);
   if(data.photoUrl)db.ref('properties/'+propId+'/photoUrl').set(data.photoUrl);
-  const parts=currentDetailKey.split('_');
-  const propId=parts[0],date=parts.slice(1).join('_');
   if(data.staff){
     const existingTask=Object.entries(tasks).find(([,t])=>t.prop===propId&&t.date===date&&t.source==='airbnb');
     if(existingTask){db.ref('tasks/'+existingTask[0]+'/staff').set(data.staff);db.ref('tasks/'+existingTask[0]+'/note').set('チェックアウト清掃'+(data.note?' - '+data.note:''))}
