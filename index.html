@@ -365,16 +365,20 @@ textarea{resize:vertical;min-height:60px}
         <input type="time" id="detailCleanTime" value="11:00">
       </div>
       <div class="detail-field">
-        <label><i class="ti ti-alert-circle"></i> 優先度</label>
-        <select id="detailPriority">
-          <option value="normal">通常</option>
-          <option value="high">高（ターンオーバー）</option>
-          <option value="deep">ディープクリーニング</option>
-        </select>
+        <label><i class="ti ti-key"></i> 入室方法</label>
+        <input type="text" id="detailEntry" placeholder="例: キーボックス 0906">
       </div>
       <div class="detail-field full">
-        <label><i class="ti ti-note"></i> 備考・特記事項</label>
-        <textarea id="detailNote" placeholder="特別な指示やメモ..." style="min-height:50px"></textarea>
+        <label><i class="ti ti-map-pin"></i> 住所</label>
+        <input type="text" id="detailAddress" placeholder="物件の住所">
+      </div>
+      <div class="detail-field full">
+        <label><i class="ti ti-photo"></i> 清掃完成図の写真URL</label>
+        <input type="url" id="detailPhotoUrl" placeholder="https://...">
+      </div>
+      <div class="detail-field full">
+        <label><i class="ti ti-note"></i> 社内メモ</label>
+        <textarea id="detailNote" placeholder="スタッフ間の共有メモ..." style="min-height:50px"></textarea>
       </div>
     </div>
     <div class="modal-actions">
@@ -894,10 +898,13 @@ function openDetail(key,propId,date){
   staffSel.innerHTML='<option value="">未割当</option>'+Object.entries(staff).map(([id,s])=>`<option value="${id}">${esc(s.name)}</option>`).join('');
 
   const saved=cleaningDetails[key]||{};
+  const p=properties[propId]||{};
   document.getElementById('detailGuests').value=saved.guests||'';
   staffSel.value=saved.staff||'';
   document.getElementById('detailCleanTime').value=saved.cleanTime||'11:00';
-  document.getElementById('detailPriority').value=saved.priority||'normal';
+  document.getElementById('detailEntry').value=saved.entry||p.entry||'';
+  document.getElementById('detailAddress').value=saved.address||p.address||'';
+  document.getElementById('detailPhotoUrl').value=saved.photoUrl||p.photoUrl||'';
   document.getElementById('detailNote').value=saved.note||'';
 
   document.getElementById('detailOverlay').classList.add('show');
@@ -913,11 +920,17 @@ document.getElementById('detailSave').onclick=()=>{
     guests:parseInt(document.getElementById('detailGuests').value)||null,
     staff:document.getElementById('detailStaff').value||null,
     cleanTime:document.getElementById('detailCleanTime').value||'11:00',
-    priority:document.getElementById('detailPriority').value||'normal',
+    entry:document.getElementById('detailEntry').value.trim(),
+    address:document.getElementById('detailAddress').value.trim(),
+    photoUrl:document.getElementById('detailPhotoUrl').value.trim(),
     note:document.getElementById('detailNote').value.trim(),
     updatedAt:Date.now()
   };
   db.ref('cleaningDetails/'+currentDetailKey).set(data);
+  const propId=currentDetailKey.split('_')[0];
+  if(data.entry)db.ref('properties/'+propId+'/entry').set(data.entry);
+  if(data.address)db.ref('properties/'+propId+'/address').set(data.address);
+  if(data.photoUrl)db.ref('properties/'+propId+'/photoUrl').set(data.photoUrl);
   const parts=currentDetailKey.split('_');
   const propId=parts[0],date=parts.slice(1).join('_');
   if(data.staff){
