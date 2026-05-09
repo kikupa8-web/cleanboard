@@ -202,13 +202,30 @@ textarea{resize:vertical;min-height:60px}
 
 @media(max-width:768px){
   .sidebar{display:none}
-  .content{padding:1rem}
-  .cal-day{min-height:70px}
-  .cal-chip{font-size:.6rem;padding:1px 4px}
-  .cal-day-num{font-size:.75rem;width:20px;height:20px;line-height:20px}
-  .navbar h1{font-size:.95rem;margin-right:.5rem}
-  .nav-tab{padding:.4rem .6rem;font-size:.8rem}
+  .content{padding:.75rem}
+  .navbar{height:auto;flex-wrap:wrap;padding:.4rem .6rem;gap:.3rem}
+  .navbar h1{font-size:.95rem;margin-right:auto}
+  .nav-tabs{order:3;width:100%;overflow-x:auto;padding-top:.3rem;border-top:1px solid var(--border);margin-top:.2rem}
+  .nav-tab{padding:.35rem .55rem;font-size:.72rem}
+  .nav-right{order:2;gap:.3rem}
+  .btn-add{padding:.35rem .6rem;font-size:.75rem}
+  .conn-indicator{font-size:.65rem;padding:.2rem .4rem}
+  .cal-header{flex-wrap:wrap;gap:.4rem}
+  .cal-header h2{font-size:1rem;min-width:auto}
+  .cal-btn{padding:.35rem .6rem;font-size:.75rem}
+  .sync-btn{font-size:.72rem;padding:.3rem .5rem}
+  .airbnb-legend{font-size:.65rem;gap:.5rem;padding:.35rem .5rem}
+  .cal-day{min-height:65px;padding:.2rem}
+  .cal-chip{font-size:.55rem;padding:1px 3px;gap:1px}
+  .cal-chip i{font-size:.6rem}
+  .cal-day-num{font-size:.72rem;width:20px;height:20px;line-height:20px}
+  .co-card{padding:3px 5px;font-size:.58rem}
+  .co-card-header{font-size:.6rem}
+  .co-card-row{font-size:.52rem}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .modal{padding:1rem;margin:.5rem}
+  .detail-fields{grid-template-columns:1fr}
+  .detail-field.full{grid-column:1}
 }
 </style>
 </head>
@@ -898,13 +915,13 @@ function openDetail(key,propId,date){
   staffSel.innerHTML='<option value="">未割当</option>'+Object.entries(staff).map(([id,s])=>`<option value="${id}">${esc(s.name)}</option>`).join('');
 
   const saved=cleaningDetails[key]||{};
-  const p=properties[propId]||{};
+  const prop=properties[propId]||{};
   document.getElementById('detailGuests').value=saved.guests||'';
   staffSel.value=saved.staff||'';
   document.getElementById('detailCleanTime').value=saved.cleanTime||'11:00';
-  document.getElementById('detailEntry').value=saved.entry||p.entry||'';
-  document.getElementById('detailAddress').value=saved.address||p.address||'';
-  document.getElementById('detailPhotoUrl').value=saved.photoUrl||p.photoUrl||'';
+  document.getElementById('detailEntry').value=saved.entry||prop.entry||'';
+  document.getElementById('detailAddress').value=saved.address||prop.address||'';
+  document.getElementById('detailPhotoUrl').value=saved.photoUrl||prop.photoUrl||'';
   document.getElementById('detailNote').value=saved.note||'';
 
   document.getElementById('detailOverlay').classList.add('show');
