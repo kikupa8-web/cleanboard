@@ -2,176 +2,171 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>CleanBoard - 清掃管理</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f5f5f5;--surface:#fff;--surface2:#f0f0f0;--text:#1a1a1a;--text2:#666;
-  --border:#e0e0e0;--primary:#1D9E75;--primary-light:#e6f7f1;--danger:#d85a30;
-  --shadow:0 1px 3px rgba(0,0,0,.08);--radius:8px;
+  --bg:#f0f2f5;--surface:#fff;--surface2:#f5f5f5;--text:#1a1a1a;--text2:#666;--text3:#999;
+  --border:#e8e8e8;--primary:#4a7aed;--primary-light:#eef3ff;--danger:#e85454;
+  --accent:#f0836b;--shadow:0 1px 4px rgba(0,0,0,.06);--radius:12px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-@media(prefers-color-scheme:dark){
-  :root{
-    --bg:#121212;--surface:#1e1e1e;--surface2:#2a2a2a;--text:#e0e0e0;--text2:#999;
-    --border:#333;--primary-light:#1a3a2e;--shadow:0 1px 3px rgba(0,0,0,.3);
-  }
-}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans",sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding-bottom:calc(60px + var(--safe-bottom))}
 a{color:var(--primary);text-decoration:none}
-button{cursor:pointer;font-family:inherit;font-size:.875rem;border:none;border-radius:var(--radius);padding:.5rem 1rem;transition:opacity .15s}
-button:hover{opacity:.85}
-input,select,textarea{font-family:inherit;font-size:.875rem;border:1px solid var(--border);border-radius:var(--radius);padding:.5rem .75rem;background:var(--surface);color:var(--text);width:100%}
+button{cursor:pointer;font-family:inherit;font-size:.875rem;border:none;border-radius:var(--radius);padding:.5rem 1rem;transition:all .15s}
+button:active{transform:scale(.97)}
+input,select,textarea{font-family:inherit;font-size:.9rem;border:1px solid var(--border);border-radius:var(--radius);padding:.6rem .75rem;background:var(--surface);color:var(--text);width:100%}
 textarea{resize:vertical;min-height:60px}
 
-.navbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1rem;display:flex;align-items:center;height:52px;gap:.5rem;position:sticky;top:0;z-index:100}
-.navbar h1{font-size:1.1rem;font-weight:700;color:var(--primary);margin-right:1.5rem;white-space:nowrap}
-.nav-tabs{display:flex;gap:2px;overflow-x:auto}
-.nav-tab{padding:.5rem .85rem;border-radius:var(--radius);background:transparent;color:var(--text2);font-weight:500;white-space:nowrap}
-.nav-tab.active{background:var(--primary);color:#fff}
-.nav-right{margin-left:auto;display:flex;align-items:center;gap:.5rem}
-.btn-add{background:var(--primary);color:#fff;display:flex;align-items:center;gap:.35rem;font-weight:600;padding:.45rem .9rem}
-.conn-indicator{font-size:.75rem;padding:.25rem .5rem;border-radius:99px;display:flex;align-items:center;gap:.3rem}
-.conn-indicator.online{background:#d4edda;color:#155724}
-.conn-indicator.offline{background:#f8d7da;color:#721c24}
-@media(prefers-color-scheme:dark){
-  .conn-indicator.online{background:#1a3a2e;color:#6dd49e}
-  .conn-indicator.offline{background:#3a1a1a;color:#e06060}
-}
+/* ===== Bottom Tab Bar ===== */
+.bottom-tabs{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:var(--safe-bottom);height:calc(60px + var(--safe-bottom))}
+.bottom-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:.4rem 0;background:transparent;color:var(--text3);font-size:.65rem;font-weight:500;border-radius:0;position:relative}
+.bottom-tab i{font-size:1.3rem;line-height:1}
+.bottom-tab.active{color:var(--primary)}
+.bottom-tab.active::after{content:'';position:absolute;top:0;left:25%;right:25%;height:2px;background:var(--primary);border-radius:0 0 2px 2px}
+.bottom-tab.special{color:var(--accent)}
+.bottom-tab.special i{font-size:1.1rem;background:var(--accent);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 
-.layout{display:flex;flex:1;overflow:hidden}
-.sidebar{width:250px;background:var(--surface);border-right:1px solid var(--border);padding:1rem;overflow-y:auto;flex-shrink:0}
-.sidebar h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:.5rem;margin-top:1rem}
-.sidebar h3:first-child{margin-top:0}
-.filter-item{display:flex;align-items:center;gap:.5rem;padding:.35rem .5rem;border-radius:var(--radius);cursor:pointer;font-size:.875rem}
-.filter-item:hover{background:var(--surface2)}
-.filter-item.active{background:var(--primary-light);font-weight:600}
-.filter-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.staff-item{padding:.35rem .5rem;font-size:.875rem;color:var(--text2)}
-.progress-section{margin-top:1.5rem}
-.progress-bar-bg{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:.35rem}
-.progress-bar-fill{height:100%;background:var(--primary);border-radius:99px;transition:width .3s}
-.progress-label{font-size:.75rem;color:var(--text2);margin-top:.25rem}
-
-.content{flex:1;padding:1.5rem;overflow-y:auto}
+/* ===== Main Content ===== */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .tab-content{display:none}
 .tab-content.active{display:block}
 
-.cal-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
-.cal-header h2{font-size:1.25rem;font-weight:700;min-width:170px;letter-spacing:.02em}
-.cal-btn{background:var(--surface2);color:var(--text);padding:.45rem .85rem;font-size:.82rem;font-weight:500;transition:background .15s}
-.cal-btn:hover{background:var(--border)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.cal-dow{background:var(--surface2);text-align:center;font-size:.72rem;font-weight:700;padding:.5rem .2rem;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--border)}
-.cal-dow.weekend{color:var(--danger);opacity:.7}
-.cal-day{background:var(--surface);min-height:105px;padding:.4rem;font-size:.75rem;vertical-align:top;border:.5px solid var(--border);transition:background .1s;position:relative}
-.cal-day:hover{background:var(--surface2)}
-.cal-day.other{opacity:.3;background:var(--bg)}
-.cal-day.other:hover{opacity:.4}
-.cal-day.today{background:var(--primary-light);box-shadow:inset 0 0 0 2px var(--primary)}
-.cal-day.weekend{background:color-mix(in srgb,var(--surface) 92%,var(--danger))}
-.cal-day.weekend.today{background:var(--primary-light);box-shadow:inset 0 0 0 2px var(--primary)}
-.cal-day-num{font-weight:700;font-size:.82rem;margin-bottom:.35rem;display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%}
-.cal-day.today .cal-day-num{background:var(--primary);color:#fff}
-.cal-chip{display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;font-size:.68rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:transform .1s,box-shadow .1s;line-height:1.4}
-.cal-chip:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.1);opacity:1}
-.cal-chip i{font-size:.72rem;flex-shrink:0}
-.cal-chip.airbnb{font-weight:600}
-.cal-chip.airbnb-checkin{background:#e0f5f2!important;color:#00796b!important;border-left:3px solid #00A699}
-.cal-chip.airbnb-checkout{background:#fde8e8!important;color:#c0392b!important;border-left:3px solid #FF5A5F}
-.cal-chip.airbnb-stay{background:var(--surface2)!important;color:var(--text2)!important;border-left:3px solid #bbb;opacity:.6;font-weight:400}
-.cal-chip.task-chip{border-left:3px solid currentColor}
-@media(prefers-color-scheme:dark){
-  .cal-chip.airbnb-checkin{background:#0d3b33!important;color:#4dd0c0!important}
-  .cal-chip.airbnb-checkout{background:#3b1515!important;color:#f07070!important}
-  .cal-chip.airbnb-stay{background:#2a2a2a!important;color:#888!important;border-left-color:#555}
-  .cal-day.weekend{background:color-mix(in srgb,var(--surface) 90%,#d85a30)}
-}
-.airbnb-legend{display:flex;gap:1.2rem;margin-bottom:.75rem;flex-wrap:wrap;font-size:.78rem;color:var(--text2);padding:.5rem .75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
-.airbnb-legend span{display:flex;align-items:center;gap:.4rem}
-.airbnb-legend i{font-size:1rem}
-.legend-dot{width:12px;height:4px;border-radius:2px;flex-shrink:0}
-.sync-btn{background:var(--surface2);color:var(--text);padding:.45rem .85rem;font-size:.82rem;display:flex;align-items:center;gap:.4rem;font-weight:500}
-.sync-btn:hover{background:var(--border)}
-.sync-btn.syncing{opacity:.5;pointer-events:none}
-.ical-input{font-size:.78rem;padding:.35rem .5rem}
+/* ===== Calendar Header ===== */
+.cal-header{display:flex;align-items:center;justify-content:center;padding:.75rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;gap:.5rem}
+.cal-header h2{font-size:1.1rem;font-weight:700;min-width:120px;text-align:center}
+.cal-nav-btn{background:var(--surface2);color:var(--text);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;font-size:1rem}
+.cal-today-btn{background:var(--surface2);color:var(--text);padding:.4rem .85rem;font-size:.8rem;font-weight:600;border-radius:20px}
+.cal-today-btn:active{background:var(--border)}
 
+/* ===== Day List Calendar ===== */
+.day-list{padding:0}
+.day-row{display:flex;align-items:stretch;min-height:56px;border-bottom:1px solid var(--border);background:var(--surface)}
+.day-row.has-event{min-height:auto}
+.day-label{width:52px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.5rem 0;font-weight:700;border-right:1px solid var(--border);background:var(--primary-light);color:var(--primary);position:relative}
+.day-label .day-num{font-size:1.15rem;line-height:1.2}
+.day-label .day-dow{font-size:.65rem;font-weight:600;opacity:.8}
+.day-row.weekend .day-label{background:#fff0f0;color:var(--danger)}
+.day-row.today .day-label{background:var(--primary);color:#fff}
+.day-row.today .day-label::after{content:'';position:absolute;right:-1px;top:0;bottom:0;width:3px;background:var(--primary)}
+.day-content{flex:1;padding:.5rem .75rem;display:flex;flex-direction:column;justify-content:center;gap:.4rem}
+
+/* ===== Checkout Card (in day list) ===== */
+.co-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.7rem .85rem;cursor:pointer;box-shadow:var(--shadow);transition:transform .1s,box-shadow .15s;position:relative}
+.co-card:active{transform:scale(.98);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.co-card-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem}
+.co-card-name{font-weight:700;font-size:.95rem;color:var(--text)}
+.co-card-alert{color:var(--danger);font-size:1.1rem}
+.co-card-info{display:flex;gap:1.5rem;font-size:.82rem;color:var(--text2)}
+.co-card-info-item{display:flex;align-items:center;gap:.3rem}
+.co-card-info-item .label{color:var(--text3);font-weight:600;font-size:.75rem}
+.co-card-info-item .value{background:var(--surface2);padding:.15rem .5rem;border-radius:6px;font-weight:500;font-size:.8rem}
+
+/* ===== Checkin chip ===== */
+.ci-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:6px;font-size:.75rem;font-weight:600;background:#e8f5e9;color:#2e7d32}
+.stay-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.15rem .5rem;border-radius:6px;font-size:.7rem;color:var(--text3);background:var(--surface2)}
+.task-chip-mini{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:6px;font-size:.75rem;font-weight:500}
+.task-chip-mini.done{opacity:.5;text-decoration:line-through}
+
+/* ===== Floating Action Buttons ===== */
+.fab-container{position:fixed;bottom:calc(72px + var(--safe-bottom));right:16px;display:flex;flex-direction:column;gap:10px;z-index:90}
+.fab{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.15);padding:0;font-size:1.3rem}
+.fab:active{transform:scale(.93)}
+.fab-filter{background:var(--surface);color:var(--text2);border:1px solid var(--border)}
+.fab-add{background:var(--primary);color:#fff;flex-direction:column;gap:1px;font-size:.6rem;font-weight:700;width:56px;height:56px}
+.fab-add i{font-size:1.2rem}
+.fab-sync{background:var(--surface);color:var(--text2);border:1px solid var(--border);width:44px;height:44px;font-size:1rem}
+.fab-sync.syncing{animation:spin 1s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+/* ===== Filter Drawer ===== */
+.filter-drawer{position:fixed;bottom:calc(60px + var(--safe-bottom));left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:1rem;z-index:95;transform:translateY(100%);transition:transform .25s ease;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+.filter-drawer.open{transform:translateY(0)}
+.filter-drawer h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:.5rem}
+.filter-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
+.filter-chip{padding:.4rem .75rem;border-radius:20px;font-size:.8rem;font-weight:500;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.filter-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.filter-chip .fdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.3rem}
+
+/* ===== Task List ===== */
+.task-section{padding:1rem}
 .task-filters{display:flex;gap:.35rem;margin-bottom:1rem}
-.task-filter{padding:.35rem .7rem;border-radius:99px;background:var(--surface2);color:var(--text2);font-size:.8rem}
-.task-filter.active{background:var(--primary);color:#fff}
+.task-filter{padding:.4rem .8rem;border-radius:20px;background:var(--surface2);color:var(--text2);font-size:.8rem;font-weight:500;border:1px solid var(--border)}
+.task-filter.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .task-list{display:flex;flex-direction:column;gap:.5rem}
 .task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;display:flex;align-items:flex-start;gap:.75rem;box-shadow:var(--shadow)}
 .task-card.done{opacity:.55}
-.task-check{width:20px;height:20px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all .15s}
+.task-check{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all .15s}
 .task-check.checked{background:var(--primary);border-color:var(--primary);color:#fff}
 .task-info{flex:1;min-width:0}
 .task-prop{font-weight:600;font-size:.9rem}
 .task-meta{font-size:.78rem;color:var(--text2);margin-top:.15rem}
 .task-note{font-size:.78rem;color:var(--text2);margin-top:.25rem;font-style:italic}
-.task-delete{background:transparent;color:var(--text2);padding:.3rem;font-size:1rem}
+.task-delete{background:transparent;color:var(--text3);padding:.3rem;font-size:1rem}
 .task-delete:hover{color:var(--danger)}
 .task-prop-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.35rem;vertical-align:middle}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
 
-.cl-select{max-width:300px;margin-bottom:1rem}
+/* ===== Checklist ===== */
+.checklist-section{padding:1rem}
+.cl-select{max-width:100%;margin-bottom:1rem;border-radius:var(--radius)}
 .cl-room{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.75rem;overflow:hidden}
 .cl-room-header{padding:.6rem .85rem;font-weight:600;font-size:.9rem;background:var(--surface2);display:flex;align-items:center;justify-content:space-between}
 .cl-room-progress{font-size:.75rem;color:var(--text2);font-weight:400}
 .cl-items{padding:.5rem .85rem}
-.cl-item{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;font-size:.875rem;cursor:pointer}
-.cl-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--primary)}
+.cl-item{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;font-size:.875rem;cursor:pointer}
+.cl-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary)}
 .cl-progress-all{margin-top:.5rem}
+.progress-bar-bg{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:.35rem}
+.progress-bar-fill{height:100%;background:var(--primary);border-radius:99px;transition:width .3s}
+.progress-label{font-size:.75rem;color:var(--text2);margin-top:.25rem}
 
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+/* ===== Stats ===== */
+.stats-section{padding:1rem}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:1.5rem}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow)}
 .stat-value{font-size:1.8rem;font-weight:700;color:var(--primary)}
-.stat-label{font-size:.78rem;color:var(--text2);margin-top:.2rem}
+.stat-label{font-size:.75rem;color:var(--text2);margin-top:.2rem}
 .chart-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 .chart-section h3{font-size:.9rem;margin-bottom:.75rem}
 .bar-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;font-size:.8rem}
-.bar-name{width:80px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-name{width:70px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar-track{flex:1;height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative}
 .bar-fill{height:100%;border-radius:4px;transition:width .3s;display:flex;align-items:center;padding-left:6px;font-size:.7rem;color:#fff;font-weight:600;min-width:fit-content}
 .bar-count{width:30px;flex-shrink:0;text-align:center;font-weight:600}
 
+/* ===== Settings ===== */
+.settings-section-wrap{padding:1rem}
 .settings-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem;box-shadow:var(--shadow)}
 .settings-section h3{font-size:.95rem;margin-bottom:.75rem}
 .setting-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;font-size:.875rem}
-.setting-row .filter-dot{flex-shrink:0}
+.setting-row .filter-dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .setting-row span{flex:1}
-.btn-sm{padding:.3rem .6rem;font-size:.78rem;border-radius:var(--radius)}
+.btn-sm{padding:.35rem .65rem;font-size:.78rem;border-radius:var(--radius)}
 .btn-danger{background:var(--danger);color:#fff}
 .btn-primary{background:var(--primary);color:#fff}
 .add-row{display:flex;gap:.5rem;margin-top:.5rem}
 .add-row input{flex:1}
-.color-input{width:50px!important;padding:2px!important;height:34px;cursor:pointer}
+.color-input{width:50px!important;padding:2px!important;height:36px;cursor:pointer;border-radius:8px}
+.ical-input{font-size:.78rem;padding:.4rem .55rem}
 
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:200;padding:1rem}
+/* ===== Modals ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:200}
 .modal-overlay.show{display:flex}
-.modal{background:var(--surface);border-radius:12px;padding:1.5rem;width:100%;max-width:420px;box-shadow:0 8px 30px rgba(0,0,0,.15)}
-.modal h2{font-size:1.1rem;margin-bottom:1rem}
+.modal{background:var(--surface);border-radius:16px 16px 0 0;padding:1.5rem;width:100%;max-width:500px;box-shadow:0 -4px 30px rgba(0,0,0,.15);max-height:85vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto .75rem}
+.modal h2{font-size:1.05rem;margin-bottom:1rem}
 .modal-field{margin-bottom:.85rem}
 .modal-field label{display:block;font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:.3rem}
-.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.2rem}
+.modal-actions{display:flex;gap:.5rem;margin-top:1.2rem}
+.modal-actions button{flex:1;padding:.7rem;font-size:.9rem;font-weight:600}
 .btn-cancel{background:var(--surface2);color:var(--text)}
 
-.empty-state{text-align:center;padding:3rem 1rem;color:var(--text2)}
-
-.co-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 8px;margin-bottom:3px;cursor:pointer;box-shadow:var(--shadow);transition:transform .1s,box-shadow .15s;font-size:.68rem;border-left:3px solid #FF5A5F}
-.co-card:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.12)}
-.co-card-header{display:flex;align-items:center;gap:4px;font-weight:700;color:#c0392b;margin-bottom:3px}
-.co-card-header i{font-size:.75rem}
-.co-card-row{display:flex;align-items:center;gap:4px;color:var(--text2);margin-bottom:1px;font-size:.63rem}
-.co-card-row i{font-size:.68rem;flex-shrink:0;width:14px;text-align:center}
-.co-card-row.next-in{color:#00796b;font-weight:600}
-.co-card-guest{font-size:.65rem;color:var(--text);font-weight:500}
-@media(prefers-color-scheme:dark){
-  .co-card-header{color:#f07070}
-  .co-card-row.next-in{color:#4dd0c0}
-}
-
-.detail-modal{max-width:480px}
-.detail-header{display:flex;align-items:center;gap:.5rem;margin-bottom:1.2rem;padding-bottom:.75rem;border-bottom:2px solid var(--border)}
+/* ===== Detail Modal ===== */
+.detail-modal{max-height:90vh}
+.detail-header{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:2px solid var(--border)}
 .detail-header .prop-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .7rem;border-radius:99px;font-weight:700;font-size:.9rem}
 .detail-header .close-btn{margin-left:auto;background:transparent;color:var(--text2);font-size:1.3rem;padding:.2rem .5rem}
 .detail-timeline{position:relative;padding-left:28px;margin-bottom:1.2rem}
@@ -181,105 +176,45 @@ textarea{resize:vertical;min-height:60px}
 .tl-dot{position:absolute;left:-22px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--border);background:var(--surface)}
 .tl-dot.checkout{border-color:#FF5A5F;background:#fde8e8}
 .tl-dot.clean{border-color:var(--primary);background:var(--primary-light)}
-.tl-dot.checkin{border-color:#00A699;background:#e0f5f2}
+.tl-dot.checkin{border-color:#2e7d32;background:#e8f5e9}
 .tl-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.15rem}
 .tl-label.checkout{color:#c0392b}
 .tl-label.clean{color:var(--primary)}
-.tl-label.checkin{color:#00796b}
+.tl-label.checkin{color:#2e7d32}
 .tl-value{font-size:.9rem;font-weight:600}
 .tl-sub{font-size:.78rem;color:var(--text2)}
-.detail-fields{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+.detail-fields{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem}
 .detail-field{display:flex;flex-direction:column;gap:.25rem}
-.detail-field label{font-size:.7rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em}
-.detail-field input,.detail-field select{font-size:.85rem;padding:.45rem .6rem}
-.detail-field.full{grid-column:1/-1}
-@media(prefers-color-scheme:dark){
-  .tl-dot.checkout{background:#3b1515}
-  .tl-dot.checkin{background:#0d3b33}
-  .tl-label.checkout{color:#f07070}
-  .tl-label.checkin{color:#4dd0c0}
-}
+.detail-field label{font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:.3rem}
+.detail-field input,.detail-field select{font-size:.88rem;padding:.5rem .65rem}
 
-@media(max-width:768px){
-  .sidebar{display:none}
-  .content{padding:.75rem}
-  .navbar{height:auto;flex-wrap:wrap;padding:.4rem .6rem;gap:.3rem}
-  .navbar h1{font-size:.95rem;margin-right:auto}
-  .nav-tabs{order:3;width:100%;overflow-x:auto;padding-top:.3rem;border-top:1px solid var(--border);margin-top:.2rem}
-  .nav-tab{padding:.35rem .55rem;font-size:.72rem}
-  .nav-right{order:2;gap:.3rem}
-  .btn-add{padding:.35rem .6rem;font-size:.75rem}
-  .conn-indicator{font-size:.65rem;padding:.2rem .4rem}
-  .cal-header{flex-wrap:wrap;gap:.4rem}
-  .cal-header h2{font-size:1rem;min-width:auto}
-  .cal-btn{padding:.35rem .6rem;font-size:.75rem}
-  .sync-btn{font-size:.72rem;padding:.3rem .5rem}
-  .airbnb-legend{font-size:.65rem;gap:.5rem;padding:.35rem .5rem}
-  .cal-day{min-height:65px;padding:.2rem}
-  .cal-chip{font-size:.55rem;padding:1px 3px;gap:1px}
-  .cal-chip i{font-size:.6rem}
-  .cal-day-num{font-size:.72rem;width:20px;height:20px;line-height:20px}
-  .co-card{padding:3px 5px;font-size:.58rem}
-  .co-card-header{font-size:.6rem}
-  .co-card-row{font-size:.52rem}
-  .stats-grid{grid-template-columns:repeat(2,1fr)}
-  .modal{padding:1rem;margin:.5rem}
-  .detail-fields{grid-template-columns:1fr}
-  .detail-field.full{grid-column:1}
+/* ===== Desktop overrides ===== */
+@media(min-width:769px){
+  body{max-width:500px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,.08);position:relative}
+  .bottom-tabs{max-width:500px;left:50%;transform:translateX(-50%)}
+  .filter-drawer{max-width:500px;left:50%;transform:translateX(-50%) translateY(100%)}
+  .filter-drawer.open{transform:translateX(-50%) translateY(0)}
+  .fab-container{right:calc(50% - 234px)}
 }
 </style>
 </head>
 <body>
 
-<nav class="navbar">
-  <h1><i class="ti ti-spray"></i> CleanBoard</h1>
-  <div class="nav-tabs">
-    <button class="nav-tab active" data-tab="calendar"><i class="ti ti-calendar"></i> カレンダー</button>
-    <button class="nav-tab" data-tab="tasks"><i class="ti ti-list-check"></i> タスク</button>
-    <button class="nav-tab" data-tab="checklist"><i class="ti ti-checkbox"></i> チェックリスト</button>
-    <button class="nav-tab" data-tab="stats"><i class="ti ti-chart-bar"></i> 集計</button>
-    <button class="nav-tab" data-tab="settings"><i class="ti ti-settings"></i> 設定</button>
-  </div>
-  <div class="nav-right">
-    <span id="connIndicator" class="conn-indicator offline"><i class="ti ti-wifi-off"></i> 接続中...</span>
-    <button class="btn-add" id="btnAddTask"><i class="ti ti-plus"></i> タスク追加</button>
-  </div>
-</nav>
-
-<div class="layout">
-  <aside class="sidebar" id="sidebar">
-    <h3>物件フィルター</h3>
-    <div id="propFilters"></div>
-    <h3>スタッフ</h3>
-    <div id="staffList"></div>
-    <div class="progress-section">
-      <h3>今月の進捗</h3>
-      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
-      <div class="progress-label" id="progressLabel">0 / 0 件完了</div>
+<main class="content">
+  <!-- Calendar -->
+  <div class="tab-content active" id="tab-calendar">
+    <div class="cal-header">
+      <button class="cal-nav-btn" id="calPrev"><i class="ti ti-chevron-left"></i></button>
+      <h2 id="calTitle"></h2>
+      <button class="cal-nav-btn" id="calNext"><i class="ti ti-chevron-right"></i></button>
+      <button class="cal-today-btn" id="calToday">今日へ</button>
     </div>
-  </aside>
+    <div class="day-list" id="dayList"></div>
+  </div>
 
-  <main class="content">
-    <!-- Calendar -->
-    <div class="tab-content active" id="tab-calendar">
-      <div class="cal-header">
-        <button class="cal-btn" id="calPrev"><i class="ti ti-chevron-left"></i></button>
-        <h2 id="calTitle"></h2>
-        <button class="cal-btn" id="calNext"><i class="ti ti-chevron-right"></i></button>
-        <button class="cal-btn" id="calToday">今月</button>
-        <button class="sync-btn" id="btnSync"><i class="ti ti-refresh"></i> Airbnb同期</button>
-      </div>
-      <div class="airbnb-legend" id="airbnbLegend" style="display:none">
-        <span><span class="legend-dot" style="background:#00A699"></span> チェックイン</span>
-        <span><span class="legend-dot" style="background:#FF5A5F"></span> チェックアウト（自動清掃タスク）</span>
-        <span><span class="legend-dot" style="background:#bbb"></span> 宿泊中</span>
-        <span><span class="legend-dot" style="background:var(--primary)"></span> 清掃タスク</span>
-      </div>
-      <div class="cal-grid" id="calGrid"></div>
-    </div>
-
-    <!-- Tasks -->
-    <div class="tab-content" id="tab-tasks">
+  <!-- Tasks -->
+  <div class="tab-content" id="tab-tasks">
+    <div class="task-section">
       <div class="task-filters">
         <button class="task-filter active" data-filter="all">すべて</button>
         <button class="task-filter" data-filter="undone">未完了</button>
@@ -287,9 +222,11 @@ textarea{resize:vertical;min-height:60px}
       </div>
       <div class="task-list" id="taskList"></div>
     </div>
+  </div>
 
-    <!-- Checklist -->
-    <div class="tab-content" id="tab-checklist">
+  <!-- Checklist -->
+  <div class="tab-content" id="tab-checklist">
+    <div class="checklist-section">
       <select class="cl-select" id="clPropSelect"></select>
       <div id="clRooms"></div>
       <div class="cl-progress-all">
@@ -297,22 +234,26 @@ textarea{resize:vertical;min-height:60px}
         <div class="progress-label" id="clProgressLabel">0 / 0 項目完了</div>
       </div>
     </div>
+  </div>
 
-    <!-- Stats -->
-    <div class="tab-content" id="tab-stats">
+  <!-- Stats -->
+  <div class="tab-content" id="tab-stats">
+    <div class="stats-section">
       <div class="stats-grid" id="statsGrid"></div>
       <div class="chart-section"><h3>スタッフ別 完了件数</h3><div id="chartStaff"></div></div>
       <div class="chart-section"><h3>物件別 タスク件数</h3><div id="chartProp"></div></div>
     </div>
+  </div>
 
-    <!-- Settings -->
-    <div class="tab-content" id="tab-settings">
+  <!-- Settings -->
+  <div class="tab-content" id="tab-settings">
+    <div class="settings-section-wrap">
       <div class="settings-section">
         <h3><i class="ti ti-building"></i> 物件管理</h3>
         <div id="settingsProps"></div>
         <div class="add-row">
           <input id="newPropName" placeholder="物件名">
-          <input type="color" id="newPropColor" value="#1D9E75" class="color-input">
+          <input type="color" id="newPropColor" value="#4a7aed" class="color-input">
           <button class="btn-sm btn-primary" id="btnAddProp">追加</button>
         </div>
       </div>
@@ -330,12 +271,35 @@ textarea{resize:vertical;min-height:60px}
         </div>
       </div>
     </div>
-  </main>
+  </div>
+</main>
+
+<!-- Filter Drawer -->
+<div class="filter-drawer" id="filterDrawer">
+  <h3>物件フィルター</h3>
+  <div class="filter-chips" id="filterChips"></div>
 </div>
 
-<!-- Modal -->
+<!-- FABs -->
+<div class="fab-container" id="fabContainer">
+  <button class="fab fab-sync" id="btnSync" title="Airbnb同期"><i class="ti ti-refresh"></i></button>
+  <button class="fab fab-filter" id="fabFilter" title="フィルター"><i class="ti ti-filter"></i></button>
+  <button class="fab fab-add" id="btnAddTask"><i class="ti ti-calendar-plus"></i>新規追加</button>
+</div>
+
+<!-- Bottom Tab Bar -->
+<nav class="bottom-tabs">
+  <button class="bottom-tab active" data-tab="calendar"><i class="ti ti-calendar"></i>カレンダー</button>
+  <button class="bottom-tab" data-tab="tasks"><i class="ti ti-list-check"></i>タスク</button>
+  <button class="bottom-tab" data-tab="checklist"><i class="ti ti-checkbox"></i>チェックリスト</button>
+  <button class="bottom-tab" data-tab="stats"><i class="ti ti-chart-bar"></i>集計</button>
+  <button class="bottom-tab special" data-tab="settings"><i class="ti ti-settings"></i>その他</button>
+</nav>
+
+<!-- Add Task Modal -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
+    <div class="modal-handle"></div>
     <h2><i class="ti ti-plus"></i> タスク追加</h2>
     <div class="modal-field">
       <label>物件</label>
@@ -363,6 +327,7 @@ textarea{resize:vertical;min-height:60px}
 <!-- Detail Modal -->
 <div class="modal-overlay" id="detailOverlay">
   <div class="modal detail-modal">
+    <div class="modal-handle"></div>
     <div class="detail-header">
       <span class="prop-badge" id="detailPropBadge"></span>
       <button class="close-btn" id="detailClose"><i class="ti ti-x"></i></button>
@@ -385,15 +350,15 @@ textarea{resize:vertical;min-height:60px}
         <label><i class="ti ti-key"></i> 入室方法</label>
         <input type="text" id="detailEntry" placeholder="例: キーボックス 0906">
       </div>
-      <div class="detail-field full">
+      <div class="detail-field">
         <label><i class="ti ti-map-pin"></i> 住所</label>
         <input type="text" id="detailAddress" placeholder="物件の住所">
       </div>
-      <div class="detail-field full">
+      <div class="detail-field">
         <label><i class="ti ti-photo"></i> 清掃完成図の写真URL</label>
         <input type="url" id="detailPhotoUrl" placeholder="https://...">
       </div>
-      <div class="detail-field full">
+      <div class="detail-field">
         <label><i class="ti ti-note"></i> 社内メモ</label>
         <textarea id="detailNote" placeholder="スタッフ間の共有メモ..." style="min-height:50px"></textarea>
       </div>
@@ -424,6 +389,7 @@ let properties = {}, staff = {}, tasks = {}, checklist = {};
 let airbnbEvents = {};
 let activeFilter = 'all', activePropFilter = null;
 let calYear, calMonth;
+let filterOpen = false;
 
 const ROOMS = [
   {name:'リビング', items:['床の掃除機がけ','テーブル拭き','ソファ整頓','ゴミ箱交換','窓拭き']},
@@ -436,29 +402,16 @@ const now = new Date();
 calYear = now.getFullYear();
 calMonth = now.getMonth();
 
-// Connection
+// Connection - no visible indicator in new design, just track state
+let isOnline = false;
 const connRef = db.ref('.info/connected');
-connRef.on('value', snap => {
-  const el = document.getElementById('connIndicator');
-  if(snap.val()){
-    el.className='conn-indicator online';
-    el.innerHTML='<i class="ti ti-wifi"></i> 接続中';
-  } else {
-    el.className='conn-indicator offline';
-    el.innerHTML='<i class="ti ti-wifi-off"></i> オフライン';
-  }
-});
+connRef.on('value', snap => { isOnline = !!snap.val(); });
 
 // Init default data
 async function initDefaults(){
   const pSnap = await db.ref('properties').once('value');
   if(!pSnap.exists()){
-    const defaults = [
-      {name:'@marugame',color:'#1D9E75',bgColor:'#e6f7f1'}
-    ];
-    for(const p of defaults){
-      await db.ref('properties').push(p);
-    }
+    await db.ref('properties').push({name:'@marugame',color:'#4a7aed',bgColor:'#eef3ff'});
   }
   const sSnap = await db.ref('staff').once('value');
   if(!sSnap.exists()){
@@ -480,118 +433,119 @@ async function initDefaults(){
 
 // Listen
 function listen(){
-  db.ref('properties').on('value', snap=>{
-    properties=snap.val()||{};
-    render();
-  });
-  db.ref('staff').on('value', snap=>{
-    staff=snap.val()||{};
-    render();
-  });
-  db.ref('tasks').on('value', snap=>{
-    tasks=snap.val()||{};
-    render();
-  });
-  db.ref('checklist').on('value', snap=>{
-    checklist=snap.val()||{};
-    renderChecklist();
-  });
+  db.ref('properties').on('value', snap=>{ properties=snap.val()||{}; render(); });
+  db.ref('staff').on('value', snap=>{ staff=snap.val()||{}; render(); });
+  db.ref('tasks').on('value', snap=>{ tasks=snap.val()||{}; render(); });
+  db.ref('checklist').on('value', snap=>{ checklist=snap.val()||{}; renderChecklist(); });
 }
 
 function render(){
-  renderSidebar();
   renderCalendar();
   renderTasks();
   renderChecklist();
   renderStats();
   renderSettings();
   renderModalSelects();
+  renderFilterChips();
 }
 
-// Sidebar
-function renderSidebar(){
-  let html='<div class="filter-item'+(activePropFilter===null?' active':'')+'" onclick="setPropFilter(null)"><span class="filter-dot" style="background:#888"></span>すべて</div>';
+// Filter chips
+function renderFilterChips(){
+  let html='<button class="filter-chip'+(activePropFilter===null?' active':'')+'" onclick="setPropFilter(null)">すべて</button>';
   for(const[id,p] of Object.entries(properties)){
-    html+=`<div class="filter-item${activePropFilter===id?' active':''}" onclick="setPropFilter('${id}')"><span class="filter-dot" style="background:${p.color}"></span>${esc(p.name)}</div>`;
+    html+=`<button class="filter-chip${activePropFilter===id?' active':''}" onclick="setPropFilter('${id}')"><span class="fdot" style="background:${p.color}"></span>${esc(p.name)}</button>`;
   }
-  document.getElementById('propFilters').innerHTML=html;
-  let shtml='';
-  for(const s of Object.values(staff)){
-    shtml+=`<div class="staff-item"><i class="ti ti-user"></i> ${esc(s.name)}</div>`;
-  }
-  document.getElementById('staffList').innerHTML=shtml;
-  updateProgress();
+  document.getElementById('filterChips').innerHTML=html;
 }
 
-function setPropFilter(id){activePropFilter=id;render()}
-
-function updateProgress(){
-  const y=now.getFullYear(),m=now.getMonth();
-  const monthTasks=Object.values(tasks).filter(t=>{const d=new Date(t.date);return d.getFullYear()===y&&d.getMonth()===m});
-  const done=monthTasks.filter(t=>t.done).length;
-  const total=monthTasks.length;
-  const pct=total?Math.round(done/total*100):0;
-  document.getElementById('progressFill').style.width=pct+'%';
-  document.getElementById('progressLabel').textContent=`${done} / ${total} 件完了 (${pct}%)`;
+function setPropFilter(id){
+  activePropFilter=id;
+  render();
+  toggleFilter(false);
 }
 
-// Calendar
+// Calendar - Day List
 function renderCalendar(){
-  document.getElementById('calTitle').textContent=`${calYear}年 ${calMonth+1}月`;
-  const first=new Date(calYear,calMonth,1);
+  document.getElementById('calTitle').textContent=`${calYear}年${calMonth+1}月`;
   const lastDay=new Date(calYear,calMonth+1,0).getDate();
-  const startDow=first.getDay();
-  const dows=['日','月','火','水','木','金','土'];
-  let html=dows.map((d,i)=>`<div class="cal-dow${i===0||i===6?' weekend':''}">${d}</div>`).join('');
-  const prevLast=new Date(calYear,calMonth,0).getDate();
-  for(let i=startDow-1;i>=0;i--){
-    const dow=(startDow-i)%7;
-    html+=`<div class="cal-day other${dow===0||dow===6?' weekend':''}"><div class="cal-day-num">${prevLast-i}</div></div>`;
-  }
   const today=new Date();
+  const dows=['日','月','火','水','木','金','土'];
+  let html='';
+  let todayIdx = -1;
+
   for(let d=1;d<=lastDay;d++){
     const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
-    const dayTasks=Object.values(tasks).filter(t=>t.date===dateStr&&(activePropFilter===null||t.prop===activePropFilter));
     const dow=new Date(calYear,calMonth,d).getDay();
     const isWeekend=dow===0||dow===6;
+    const dowName=dows[dow];
+
+    if(isToday) todayIdx = d;
+
+    // Get events for this day
     const abEvents=(airbnbEvents[dateStr]||[]).filter(b=>activePropFilter===null||b.propId===activePropFilter);
-    let chips=abEvents.map(b=>{
-      const p=properties[b.propId];
-      if(!p)return'';
-      const guest=b.summary&&b.summary!=='Reserved'?b.summary:'';
-      if(b.type==='checkout'){
-        const coKey=b.propId+'_'+b.date;
-        const ni=b.nextIn;
-        let nextHtml='';
-        if(ni){nextHtml=`<div class="co-card-row next-in"><i class="ti ti-login"></i> 次IN ${ni.date.slice(5).replace('-','/')} ${ni.nights}泊</div>`}
-        return`<div class="co-card" onclick="openDetail('${esc(coKey)}','${esc(b.propId)}','${esc(b.date)}')">
-          <div class="co-card-header"><i class="ti ti-logout"></i> OUT${guest?' <span class="co-card-guest">'+esc(guest)+'</span>':''}</div>
+    const dayTasks=Object.values(tasks).filter(t=>t.date===dateStr&&(activePropFilter===null||t.prop===activePropFilter));
+
+    let contentHtml='';
+
+    // Checkout cards
+    const checkouts=abEvents.filter(b=>b.type==='checkout');
+    for(const co of checkouts){
+      const p=properties[co.propId];
+      if(!p)continue;
+      const coKey=co.propId+'_'+co.date;
+      let nextHtml='';
+      if(co.nextIn){
+        nextHtml=`<div class="co-card-info-item"><span class="label">NEXT IN</span><span class="value">${co.nextIn.date.slice(5).replace('-','/')} ${co.nextIn.nights>0?co.nextIn.nights+'泊':''}</span></div>`;
+      }
+      contentHtml+=`<div class="co-card" onclick="openDetail('${esc(coKey)}','${esc(co.propId)}','${esc(co.date)}')">
+        <div class="co-card-title"><span class="co-card-name">${esc(p.name)}</span><i class="ti ti-alert-circle co-card-alert"></i></div>
+        <div class="co-card-info">
+          <div class="co-card-info-item"><span class="label">OUT</span><span class="value">${dateStr.slice(5).replace('-','/')} 11:00</span></div>
           ${nextHtml}
-        </div>`;
-      }
-      if(b.type==='checkin'){
-        return`<span class="cal-chip airbnb airbnb-checkin" title="${esc(p.name)}${guest?' - '+guest:''} (${b.nights}泊)"><i class="ti ti-login"></i> IN${guest?' '+esc(guest):''}</span>`;
-      }
-      return`<span class="cal-chip airbnb airbnb-stay" title="${esc(p.name)} 宿泊中"><i class="ti ti-moon-stars"></i></span>`;
-    }).join('');
-    chips+=dayTasks.map(t=>{
+        </div>
+      </div>`;
+    }
+
+    // Checkin chips
+    const checkins=abEvents.filter(b=>b.type==='checkin');
+    for(const ci of checkins){
+      const p=properties[ci.propId];
+      if(!p)continue;
+      contentHtml+=`<span class="ci-chip"><i class="ti ti-login" style="font-size:.8rem"></i> ${esc(p.name)} IN${ci.nights?'・'+ci.nights+'泊':''}</span>`;
+    }
+
+    // Stay chips
+    const stays=abEvents.filter(b=>b.type==='stay');
+    for(const st of stays){
+      const p=properties[st.propId];
+      if(!p)continue;
+      contentHtml+=`<span class="stay-chip"><i class="ti ti-moon-stars" style="font-size:.75rem"></i> ${esc(p.name)} 宿泊中</span>`;
+    }
+
+    // Task chips (non-airbnb)
+    for(const t of dayTasks){
+      if(t.source==='airbnb')continue;
       const p=properties[t.prop];
-      if(!p)return'';
+      if(!p)continue;
       const s=staff[t.staff];
-      const icon=t.done?'<i class="ti ti-circle-check"></i>':'<i class="ti ti-spray"></i>';
-      const doneStyle=t.done?'opacity:.5;text-decoration:line-through':'';
-      return`<span class="cal-chip task-chip" style="background:${p.bgColor||'#eee'};color:${p.color};${doneStyle}" title="${esc(p.name)} - ${s?esc(s.name):''}">${icon} ${s?esc(s.name):''}</span>`;
-    }).join('');
-    html+=`<div class="cal-day${isToday?' today':''}${isWeekend?' weekend':''}"><div class="cal-day-num">${d}</div>${chips}</div>`;
+      contentHtml+=`<span class="task-chip-mini${t.done?' done':''}" style="background:${p.bgColor||'#eee'};color:${p.color}"><i class="ti ti-${t.done?'circle-check':'spray'}" style="font-size:.8rem"></i> ${s?esc(s.name):''}</span>`;
+    }
+
+    html+=`<div class="day-row${isToday?' today':''}${isWeekend?' weekend':''}" data-day="${d}">
+      <div class="day-label"><span class="day-num">${d}</span><span class="day-dow">(${dowName})</span></div>
+      <div class="day-content">${contentHtml}</div>
+    </div>`;
   }
-  const totalCells=startDow+lastDay;
-  const rem=totalCells%7?7-totalCells%7:0;
-  for(let i=1;i<=rem;i++){
-    const rdow=(totalCells+i-1)%7;
-    html+=`<div class="cal-day other${rdow===0||rdow===6?' weekend':''}"><div class="cal-day-num">${i}</div></div>`;
+  document.getElementById('dayList').innerHTML=html;
+
+  // Scroll to today on first render
+  if(todayIdx>0 && today.getFullYear()===calYear && today.getMonth()===calMonth){
+    requestAnimationFrame(()=>{
+      const todayRow=document.querySelector('.day-row.today');
+      if(todayRow)todayRow.scrollIntoView({block:'center',behavior:'auto'});
+    });
   }
-  document.getElementById('calGrid').innerHTML=html;
 }
 
 document.getElementById('calPrev').onclick=()=>{calMonth--;if(calMonth<0){calMonth=11;calYear--}renderCalendar()};
@@ -665,7 +619,6 @@ function renderChecklist(){
   document.getElementById('clProgressLabel').textContent=`${checkedItems} / ${totalItems} 項目完了 (${pct}%)`;
 }
 document.getElementById('clPropSelect').onchange=renderChecklist;
-
 function toggleCl(propId,ri,ii,val){db.ref(`checklist/${propId}/${ri}/${ii}/checked`).set(val)}
 
 // Stats
@@ -683,7 +636,6 @@ function renderStats(){
     <div class="stat-card"><div class="stat-value">${done}</div><div class="stat-label">完了件数</div></div>
     <div class="stat-card"><div class="stat-value">${activeStaff}</div><div class="stat-label">稼働スタッフ</div></div>`;
 
-  // Staff chart
   const staffCounts={};
   for(const s of Object.keys(staff))staffCounts[s]=0;
   monthTasks.filter(t=>t.done).forEach(t=>{if(staffCounts[t.staff]!==undefined)staffCounts[t.staff]++});
@@ -694,7 +646,6 @@ function renderStats(){
     return`<div class="bar-row"><span class="bar-name">${esc(s.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:var(--primary)">${c}</div></div><span class="bar-count">${c}</span></div>`;
   }).join('');
 
-  // Prop chart
   const propCounts={};
   for(const p of Object.keys(properties))propCounts[p]=0;
   monthTasks.forEach(t=>{if(propCounts[t.prop]!==undefined)propCounts[t.prop]++});
@@ -717,8 +668,8 @@ document.getElementById('btnAddProp').onclick=()=>{
   const name=document.getElementById('newPropName').value.trim();
   const color=document.getElementById('newPropColor').value;
   if(!name)return;
-  const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
-  const bgColor=`rgba(${r},${g},${b},0.12)`;
+  const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b2=parseInt(color.slice(5,7),16);
+  const bgColor=`rgba(${r},${g},${b2},0.12)`;
   db.ref('properties').push({name,color,bgColor});
   document.getElementById('newPropName').value='';
 };
@@ -756,14 +707,25 @@ document.getElementById('btnModalSave').onclick=()=>{
 };
 
 // Tabs
-document.querySelectorAll('.nav-tab').forEach(tab=>{
+document.querySelectorAll('.bottom-tab').forEach(tab=>{
   tab.onclick=()=>{
-    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.bottom-tab').forEach(t=>t.classList.remove('active'));
     tab.classList.add('active');
     document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
     document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    // Show/hide FABs based on tab
+    const fc=document.getElementById('fabContainer');
+    fc.style.display=tab.dataset.tab==='calendar'?'flex':'none';
+    toggleFilter(false);
   };
 });
+
+// Filter toggle
+function toggleFilter(force){
+  filterOpen = force !== undefined ? force : !filterOpen;
+  document.getElementById('filterDrawer').classList.toggle('open',filterOpen);
+}
+document.getElementById('fabFilter').onclick=()=>toggleFilter();
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
@@ -810,7 +772,6 @@ function expandBookings(events,propId){
 async function syncAirbnb(){
   const btn=document.getElementById('btnSync');
   btn.classList.add('syncing');
-  btn.innerHTML='<i class="ti ti-refresh"></i> 同期中...';
   airbnbEvents={};
   let hasIcal=false;
   for(const[id,p] of Object.entries(properties)){
@@ -828,12 +789,8 @@ async function syncAirbnb(){
       }
     }catch(e){console.error('iCal sync error for '+p.name,e)}
   }
-  if(hasIcal){
-    document.getElementById('airbnbLegend').style.display='flex';
-    await autoCreateCheckoutTasks();
-  }
+  if(hasIcal) await autoCreateCheckoutTasks();
   btn.classList.remove('syncing');
-  btn.innerHTML='<i class="ti ti-refresh"></i> Airbnb同期';
   renderCalendar();
   renderTasks();
 }
@@ -851,13 +808,9 @@ async function autoCreateCheckoutTasks(){
       const assignee=staffIds[created%staffIds.length];
       const guest=co.summary&&co.summary!=='Reserved'?co.summary:'';
       await db.ref('tasks').push({
-        prop:co.propId,
-        date:date,
-        staff:assignee,
+        prop:co.propId,date,staff:assignee,
         note:'チェックアウト清掃'+(guest?' ('+guest+')':''),
-        done:false,
-        source:'airbnb',
-        createdAt:Date.now()
+        done:false,source:'airbnb',createdAt:Date.now()
       });
       created++;
     }
@@ -877,7 +830,7 @@ function renderSettingsIcal(){
   el.innerHTML=Object.entries(properties).map(([id,p])=>`<div class="setting-row" style="flex-wrap:wrap">
     <span class="filter-dot" style="background:${p.color}"></span>
     <span style="min-width:80px">${esc(p.name)}</span>
-    <input class="ical-input" style="flex:1;min-width:200px" placeholder="iCal URL (https://www.airbnb.jp/calendar/ical/...)" value="${p.icalUrl?esc(p.icalUrl):''}" onchange="saveIcalUrl('${id}',this.value)">
+    <input class="ical-input" style="flex:1;min-width:200px" placeholder="iCal URL" value="${p.icalUrl?esc(p.icalUrl):''}" onchange="saveIcalUrl('${id}',this.value)">
   </div>`).join('');
 }
 
@@ -904,7 +857,7 @@ function openDetail(key,propId,date){
   if(co){
     const guest=co.summary&&co.summary!=='Reserved'?co.summary:'ゲスト';
     tlHtml+=`<div class="tl-item"><div class="tl-dot checkout"></div><div class="tl-label checkout">チェックアウト</div><div class="tl-value">${date.slice(5).replace('-','/')} 11:00</div><div class="tl-sub">${esc(guest)} · ${co.nights}泊</div></div>`;
-    tlHtml+=`<div class="tl-item"><div class="tl-dot clean"></div><div class="tl-label clean">清掃</div><div class="tl-value">${date.slice(5).replace('-','/')} <span id="tlCleanTime">11:00</span></div><div class="tl-sub" id="tlCleanStaff">担当未定</div></div>`;
+    tlHtml+=`<div class="tl-item"><div class="tl-dot clean"></div><div class="tl-label clean">清掃</div><div class="tl-value">${date.slice(5).replace('-','/')} 11:00</div><div class="tl-sub">担当未定</div></div>`;
     if(co.nextIn){
       tlHtml+=`<div class="tl-item"><div class="tl-dot checkin"></div><div class="tl-label checkin">次のチェックイン</div><div class="tl-value">${co.nextIn.date.slice(5).replace('-','/')} 16:00</div><div class="tl-sub">${co.nextIn.summary&&co.nextIn.summary!=='Reserved'?esc(co.nextIn.summary):'ゲスト'} · ${co.nextIn.nights}泊</div></div>`;
     }
