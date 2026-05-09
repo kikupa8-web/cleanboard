@@ -159,6 +159,21 @@ textarea{resize:vertical;min-height:60px}
 .add-row input{flex:1}
 .color-input{width:50px!important;padding:2px!important;height:36px;cursor:pointer;border-radius:8px}
 .ical-input{font-size:.78rem;padding:.4rem .55rem}
+.staff-role{font-size:.65rem;padding:.15rem .4rem;border-radius:4px;background:#ffeeba;color:#856404;font-weight:600;margin-left:.3rem}
+.btn-role{padding:.25rem .5rem;font-size:.68rem;border-radius:6px;background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-role.is-admin{background:#ffeeba;color:#856404;border-color:#ffc107}
+
+/* ===== Notification Bell ===== */
+.notif-bell{position:relative;background:transparent;color:var(--text3);font-size:1.3rem;padding:.3rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+.notif-badge{position:absolute;top:2px;right:2px;background:var(--danger);color:#fff;font-size:.55rem;font-weight:700;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.notif-list{padding:1rem}
+.notif-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.65rem .85rem;margin-bottom:.5rem;box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:.6rem}
+.notif-item.unread{border-left:3px solid var(--primary);background:var(--primary-light)}
+.notif-icon{font-size:1.1rem;color:var(--primary);flex-shrink:0;margin-top:2px}
+.notif-body{flex:1;min-width:0}
+.notif-title{font-size:.85rem;font-weight:600}
+.notif-meta{font-size:.72rem;color:var(--text3);margin-top:.15rem}
+.notif-empty{text-align:center;padding:3rem 1rem;color:var(--text3)}
 
 /* ===== Modals ===== */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:200}
@@ -247,6 +262,11 @@ textarea{resize:vertical;min-height:60px}
     </div>
   </div>
 
+  <!-- Notifications -->
+  <div class="tab-content" id="tab-notifications">
+    <div class="notif-list" id="notifList"></div>
+  </div>
+
   <!-- Stats -->
   <div class="tab-content" id="tab-stats">
     <div class="stats-section">
@@ -302,8 +322,8 @@ textarea{resize:vertical;min-height:60px}
 <nav class="bottom-tabs">
   <button class="bottom-tab active" data-tab="calendar"><i class="ti ti-calendar"></i>カレンダー</button>
   <button class="bottom-tab" data-tab="tasks"><i class="ti ti-list-check"></i>タスク</button>
-  <button class="bottom-tab" data-tab="checklist"><i class="ti ti-checkbox"></i>チェックリスト</button>
-  <button class="bottom-tab" data-tab="stats"><i class="ti ti-chart-bar"></i>集計</button>
+  <button class="bottom-tab" data-tab="notifications" style="position:relative"><i class="ti ti-bell"></i>通知<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+  <button class="bottom-tab" data-tab="checklist"><i class="ti ti-checkbox"></i>チェック</button>
   <button class="bottom-tab special" data-tab="settings"><i class="ti ti-settings"></i>その他</button>
 </nav>
 
@@ -398,6 +418,7 @@ const db = firebase.database();
 const ICAL_PROXY = 'https://cleanboard-proxy.cleanboard-proxy.workers.dev';
 let properties = {}, staff = {}, tasks = {}, checklist = {};
 let airbnbEvents = {};
+let notifications = {};
 let activeFilter = 'all', activePropFilter = null;
 let calYear, calMonth;
 let filterOpen = false;
@@ -448,6 +469,7 @@ function listen(){
   db.ref('staff').on('value', snap=>{ staff=snap.val()||{}; render(); });
   db.ref('tasks').on('value', snap=>{ tasks=snap.val()||{}; render(); });
   db.ref('checklist').on('value', snap=>{ checklist=snap.val()||{}; renderChecklist(); });
+  db.ref('notifications').orderByChild('timestamp').limitToLast(50).on('value', snap=>{ notifications=snap.val()||{}; renderNotifications(); });
 }
 
 function render(){
@@ -575,7 +597,26 @@ function renderTasks(){
   }).join('');
 }
 
-function toggleTask(id){db.ref('tasks/'+id+'/done').transaction(v=>!v)}
+function toggleTask(id){
+  const t=tasks[id];
+  const wasDone=t&&t.done;
+  db.ref('tasks/'+id+'/done').transaction(v=>!v);
+  // Create notification when marking as done
+  if(t&&!wasDone){
+    const s=staff[t.staff];
+    const p=properties[t.prop];
+    db.ref('notifications').push({
+      type:'task_done',
+      taskId:id,
+      staffName:s?s.name:'不明',
+      propName:p?p.name:'不明',
+      date:t.date,
+      note:t.note||'',
+      timestamp:Date.now(),
+      read:false
+    });
+  }
+}
 function deleteTask(id){if(confirm('このタスクを削除しますか？'))db.ref('tasks/'+id).remove()}
 
 document.querySelectorAll('.task-filter').forEach(b=>{
@@ -734,8 +775,18 @@ function renderStats(){
 // Settings
 function renderSettings(){
   document.getElementById('settingsProps').innerHTML=Object.entries(properties).map(([id,p])=>`<div class="setting-row"><span class="filter-dot" style="background:${p.color}"></span><span>${esc(p.name)}</span><button class="btn-sm btn-danger" onclick="deleteProp('${id}')"><i class="ti ti-trash"></i></button></div>`).join('');
-  document.getElementById('settingsStaff').innerHTML=Object.entries(staff).map(([id,s])=>`<div class="setting-row"><i class="ti ti-user" style="color:var(--text2)"></i><span>${esc(s.name)}</span><button class="btn-sm btn-danger" onclick="deleteStaff('${id}')"><i class="ti ti-trash"></i></button></div>`).join('');
+  document.getElementById('settingsStaff').innerHTML=Object.entries(staff).map(([id,s])=>{
+    const isAdmin=s.role==='admin';
+    return`<div class="setting-row"><i class="ti ti-user" style="color:var(--text2)"></i><span>${esc(s.name)}${isAdmin?'<span class="staff-role">管理者</span>':''}</span><button class="btn-role${isAdmin?' is-admin':''}" onclick="toggleAdmin('${id}')">${isAdmin?'管理者':'管理者に設定'}</button><button class="btn-sm btn-danger" onclick="deleteStaff('${id}')"><i class="ti ti-trash"></i></button></div>`;
+  }).join('');
   renderSettingsIcal();
+}
+
+function toggleAdmin(id){
+  const s=staff[id];
+  if(!s)return;
+  const newRole=s.role==='admin'?null:'admin';
+  db.ref('staff/'+id+'/role').set(newRole);
 }
 
 document.getElementById('btnAddProp').onclick=()=>{
@@ -791,6 +842,7 @@ document.querySelectorAll('.bottom-tab').forEach(tab=>{
     const fc=document.getElementById('fabContainer');
     fc.style.display=tab.dataset.tab==='calendar'?'flex':'none';
     toggleFilter(false);
+    if(tab.dataset.tab==='notifications')markAllNotifsRead();
   };
 });
 
@@ -983,6 +1035,47 @@ document.getElementById('detailSave').onclick=()=>{
   document.getElementById('detailOverlay').classList.remove('show');
   render();
 };
+
+// Notifications
+function renderNotifications(){
+  const entries=Object.entries(notifications).sort((a,b)=>(b[1].timestamp||0)-(a[1].timestamp||0));
+  const unread=entries.filter(([,n])=>!n.read).length;
+  const badge=document.getElementById('notifBadge');
+  if(unread>0){
+    badge.style.display='flex';
+    badge.textContent=unread;
+  }else{
+    badge.style.display='none';
+  }
+  const el=document.getElementById('notifList');
+  if(!el)return;
+  if(!entries.length){
+    el.innerHTML='<div class="notif-empty"><i class="ti ti-bell-off" style="font-size:2rem"></i><p>通知はありません</p></div>';
+    return;
+  }
+  el.innerHTML=entries.map(([id,n])=>{
+    const time=n.timestamp?new Date(n.timestamp):new Date();
+    const timeStr=`${time.getMonth()+1}/${time.getDate()} ${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
+    const icon=n.type==='task_done'?'ti-circle-check':'ti-bell';
+    return`<div class="notif-item${n.read?'':' unread'}" onclick="markNotifRead('${id}')">
+      <i class="ti ${icon} notif-icon"></i>
+      <div class="notif-body">
+        <div class="notif-title"><b>${esc(n.staffName)}</b>が<b>${esc(n.propName)}</b>の清掃を完了</div>
+        <div class="notif-meta"><i class="ti ti-calendar"></i> ${n.date} &nbsp; <i class="ti ti-clock"></i> ${timeStr}${n.note?' &nbsp; '+esc(n.note):''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function markNotifRead(id){
+  db.ref('notifications/'+id+'/read').set(true);
+}
+
+function markAllNotifsRead(){
+  for(const[id,n] of Object.entries(notifications)){
+    if(!n.read)db.ref('notifications/'+id+'/read').set(true);
+  }
+}
 
 // Boot
 async function boot(){
