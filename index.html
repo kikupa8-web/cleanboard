@@ -355,6 +355,32 @@ textarea{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- Confirm Done Modal -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2><i class="ti ti-circle-check" style="color:var(--primary)"></i> 清掃完了の確認</h2>
+    <div style="background:var(--primary-light);border-radius:var(--radius);padding:.85rem 1rem;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
+        <i class="ti ti-building" style="color:var(--primary);font-size:1rem"></i>
+        <span style="font-weight:700;font-size:.95rem" id="confirmProp"></span>
+      </div>
+      <div style="display:flex;gap:1.2rem;font-size:.82rem;color:var(--text2)">
+        <span><i class="ti ti-calendar"></i> <span id="confirmDate"></span></span>
+        <span><i class="ti ti-user"></i> <span id="confirmStaff"></span></span>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>メモ（任意）</label>
+      <textarea id="confirmNote" placeholder="管理者への伝達事項があれば入力..." style="min-height:50px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('confirmOverlay').classList.remove('show');pendingDoneId=null">キャンセル</button>
+      <button class="btn-primary" onclick="submitDone()"><i class="ti ti-send"></i> 送信</button>
+    </div>
+  </div>
+</div>
+
 <!-- Detail Modal -->
 <div class="modal-overlay" id="detailOverlay">
   <div class="modal detail-modal">
@@ -599,23 +625,51 @@ function renderTasks(){
 
 function toggleTask(id){
   const t=tasks[id];
-  const wasDone=t&&t.done;
-  db.ref('tasks/'+id+'/done').transaction(v=>!v);
-  // Create notification when marking as done
-  if(t&&!wasDone){
-    const s=staff[t.staff];
-    const p=properties[t.prop];
-    db.ref('notifications').push({
-      type:'task_done',
-      taskId:id,
-      staffName:s?s.name:'不明',
-      propName:p?p.name:'不明',
-      date:t.date,
-      note:t.note||'',
-      timestamp:Date.now(),
-      read:false
-    });
+  if(!t)return;
+  if(t.done){
+    // Uncheck - just toggle, no confirmation needed
+    db.ref('tasks/'+id+'/done').set(false);
+    return;
   }
+  // Check - show confirm modal
+  showConfirmDone(id);
+}
+
+let pendingDoneId=null;
+function showConfirmDone(id){
+  pendingDoneId=id;
+  const t=tasks[id];
+  const s=staff[t.staff];
+  const p=properties[t.prop];
+  document.getElementById('confirmProp').textContent=p?p.name:'不明';
+  document.getElementById('confirmDate').textContent=t.date;
+  document.getElementById('confirmStaff').textContent=s?s.name:'未割当';
+  document.getElementById('confirmNote').value='';
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+
+function submitDone(){
+  if(!pendingDoneId)return;
+  const id=pendingDoneId;
+  const t=tasks[id];
+  const s=staff[t.staff];
+  const p=properties[t.prop];
+  const note=document.getElementById('confirmNote').value.trim();
+  // Mark as done
+  db.ref('tasks/'+id+'/done').set(true);
+  // Create notification
+  db.ref('notifications').push({
+    type:'task_done',
+    taskId:id,
+    staffName:s?s.name:'不明',
+    propName:p?p.name:'不明',
+    date:t.date,
+    note:note||t.note||'',
+    timestamp:Date.now(),
+    read:false
+  });
+  document.getElementById('confirmOverlay').classList.remove('show');
+  pendingDoneId=null;
 }
 function deleteTask(id){if(confirm('このタスクを削除しますか？'))db.ref('tasks/'+id).remove()}
 
@@ -1006,6 +1060,7 @@ function openDetail(key,propId,date){
   document.getElementById('detailOverlay').classList.add('show');
 }
 
+document.getElementById('confirmOverlay').onclick=e=>{if(e.target===e.currentTarget){e.currentTarget.classList.remove('show');pendingDoneId=null}};
 document.getElementById('detailClose').onclick=()=>document.getElementById('detailOverlay').classList.remove('show');
 document.getElementById('detailCancel').onclick=()=>document.getElementById('detailOverlay').classList.remove('show');
 document.getElementById('detailOverlay').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('show')};
