@@ -44,13 +44,13 @@ textarea{resize:vertical;min-height:60px}
 /* ===== Day List Calendar ===== */
 .day-list{padding:0}
 .day-row{display:flex;align-items:stretch;min-height:60px;border-bottom:1px solid var(--border);background:var(--surface)}
-.day-row.alt{background:#f2f7ff}
+.day-row.alt{background:#f5f5f7}
 .day-label{width:48px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;font-weight:700;color:#fff;position:relative;background:transparent;border-right:none;margin:.4rem .3rem .4rem .4rem}
 .day-label-inner{background:var(--primary);border-radius:10px;width:44px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .day-label .day-num{font-size:1.2rem;line-height:1.1}
 .day-label .day-dow{font-size:.65rem;font-weight:600;margin-top:1px}
+.day-row.today{background:#dce8ff!important;border-left:3px solid var(--primary)}
 .day-row.today .day-label-inner{background:#2a5cc7;box-shadow:0 2px 8px rgba(42,92,199,.4)}
-.day-row.today{border-left:3px solid #2a5cc7}
 .day-content{flex:1;padding:.5rem .75rem;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:.4rem}
 
 /* ===== Checkout Card (in day list) ===== */
