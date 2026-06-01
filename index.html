@@ -429,6 +429,7 @@ textarea{resize:vertical;min-height:60px}
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
 firebase.initializeApp({
   apiKey:"AIzaSyBzQmm4IU31ZYTgJm818DpGwLiJkqzNMiE",
@@ -1134,6 +1135,12 @@ function markAllNotifsRead(){
 
 // Boot
 async function boot(){
+  // 匿名ログイン（スタッフには見えない自動ログイン）。失敗しても従来通り続行する
+  try {
+    if (firebase.auth && !firebase.auth().currentUser) {
+      await firebase.auth().signInAnonymously();
+    }
+  } catch(e) { console.warn('匿名ログインに失敗しました（プロバイダ未有効の可能性）:', e && e.code); }
   await initDefaults();
   const pSnap=await db.ref('properties').once('value');
   const props=pSnap.val()||{};
